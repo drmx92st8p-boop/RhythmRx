@@ -1,3 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>RhythmRx</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --e:#1b6e3a;--e-bg:#edf7f1;--e-mid:#4a9e6a;--e-border:#a8d5b8;
+  --p:#6b2d8b;--p-bg:#f5edf9;--p-mid:#9a60b5;--p-border:#cca0dc;
+  --text:#0f0f0f;--text-mid:#3d3d3d;--text-light:#888;
+  --border:#e2e2e2;--bg:#fff;--bg2:#f7f7f5;
+  --radius:16px;--shadow:0 2px 16px rgba(0,0,0,0.07);--shadow-lg:0 8px 32px rgba(0,0,0,0.12);
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);color:var(--text);font-size:16px;line-height:1.5}
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+/* AUTH */
+#authScreen{background:linear-gradient(145deg,#f0f9f4 0%,#ede8f6 60%,#fdf0f9 100%);padding:32px 20px 48px;align-items:center;justify-content:center}
+.auth-wrap{width:100%;max-width:400px}
+.brand-header{text-align:center;margin-bottom:28px}
+.brand-name{font-family:"Playfair Display",serif;font-size:36px;font-weight:600;letter-spacing:-.5px}
+.brand-rx{color:var(--e)}
+.brand-tag{font-size:13px;color:var(--text-light);margin-top:4px;letter-spacing:.04em}
+.auth-card{background:white;border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:28px 24px}
+.auth-tabs{display:flex;margin-bottom:22px;border-bottom:2px solid var(--border)}
+.auth-tab{flex:1;padding:10px;font-family:"DM Sans",sans-serif;font-size:14px;font-weight:600;color:var(--text-light);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.auth-tab.on{color:var(--e);border-bottom-color:var(--e)}
+.auth-field{margin-bottom:14px}
+.auth-field label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-light);display:block;margin-bottom:6px}
+.auth-field input{width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:"DM Sans",sans-serif;font-size:15px;color:var(--text);outline:none}
+.auth-field input:focus{border-color:var(--e)}
+.auth-msg{font-size:13px;margin-top:10px;text-align:center;min-height:20px}
+.auth-footer{text-align:center;margin-top:14px;font-size:12px;color:var(--text-light)}
+
+/* SETUP */
+#setupScreen{background:linear-gradient(145deg,#f0f9f4 0%,#ede8f6 60%,#fdf0f9 100%);padding:32px 20px 48px;align-items:center;justify-content:center}
+.setup-wrap{width:100%;max-width:440px}
+.setup-card{background:white;border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:28px 24px;margin-bottom:14px}
+.sec-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-light);margin-bottom:10px}
+.pill-group{display:flex;flex-wrap:wrap;gap:7px}
+.pill{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:14px;font-weight:500;cursor:pointer;background:white;color:var(--text-mid);transition:all .15s;user-select:none}
+.pill.e-pill.on{background:var(--e-bg);border-color:var(--e);color:var(--e)}
+.pill.p-pill.on{background:var(--p-bg);border-color:var(--p);color:var(--p)}
+.pill.cal-pill.on{background:#e8f2fb;border-color:#2a6496;color:#2a6496}
+.setup-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:"DM Sans",sans-serif;font-size:15px;color:var(--text);outline:none;background:white;margin-top:8px}
+.setup-input:focus{border-color:var(--e)}
+.start-btn{width:100%;padding:16px;background:var(--e);color:white;border:none;border-radius:12px;font-family:"DM Sans",sans-serif;font-size:16px;font-weight:600;cursor:pointer;margin-top:8px;transition:opacity .2s}
+.start-btn:active{opacity:.85}
+.err{color:#c0392b;font-size:13px;margin-top:8px}
+.ok{color:var(--e);font-size:13px;margin-top:8px;font-weight:600}
+
+/* MAIN */
+#mainScreen{background:var(--bg2)}
+.topbar{background:white;padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100}
+.topbar-brand{font-family:"Playfair Display",serif;font-size:22px;font-weight:600;letter-spacing:-.3px}
+.topbar-brand .rx{color:var(--e)}
+.topbar-right{display:flex;gap:8px}
+.icon-btn{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-mid);padding:4px;line-height:1;border-radius:8px}
+.main-body{flex:1;padding:14px 14px 120px;max-width:480px;margin:0 auto;width:100%}
+
+/* DATE */
+.date-card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 14px 14px;margin-bottom:12px}
+.date-nav-row{display:flex;align-items:center;gap:6px}
+.nav-btn{background:var(--bg2);border:none;cursor:pointer;width:40px;height:40px;border-radius:50%;font-size:18px;color:var(--text-mid);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.date-center{flex:1;text-align:center}
+.date-dow{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--text-light)}
+.date-full{font-family:"Playfair Display",serif;font-size:24px;font-weight:400;color:var(--text);line-height:1.1;margin:2px 0}
+.date-cycle{font-size:13px;color:var(--text-mid);margin-top:2px}
+.date-phase{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:4px;padding:3px 10px;border-radius:10px;display:inline-block}
+.phase-follicular{background:#e8f5ee;color:var(--e)}
+.phase-ovulatory{background:#fff3e0;color:#e65c00}
+.phase-luteal{background:var(--p-bg);color:var(--p)}
+.today-chip{display:inline-block;background:var(--e);color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle;position:relative;top:-1px}
+.back-btn{display:none;margin:0 auto 10px;padding:7px 16px;background:white;border:1.5px solid var(--border);border-radius:20px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer}
+.back-btn.vis{display:block}
+.fm-badge{display:none;background:#1a1520;color:#e8dfc8;font-size:13px;font-weight:600;padding:8px 16px;border-radius:20px;text-align:center;margin-bottom:12px}
+.fm-badge.vis{display:block}
+
+/* DOSE CARDS */
+.dose-card{border-radius:var(--radius);padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
+.dose-card.ec{background:var(--e-bg);border:2px solid var(--e-border)}
+.dose-card.pc{background:var(--p-bg);border:2px solid var(--p-border)}
+.dose-hormone{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
+.ec .dose-hormone{color:var(--e)}
+.pc .dose-hormone{color:var(--p)}
+.dose-level{font-size:12px;margin-top:3px}
+.ec .dose-level{color:var(--e-mid)}
+.pc .dose-level{color:var(--p-mid)}
+.dose-num{font-family:"Playfair Display",serif;font-size:52px;line-height:1;font-weight:400}
+.ec .dose-num{color:var(--e)}
+.pc .dose-num{color:var(--p)}
+.dose-unit{font-size:11px;font-weight:600;letter-spacing:.06em;margin-top:2px}
+.ec .dose-unit{color:var(--e-mid)}
+.pc .dose-unit{color:var(--p-mid)}
+
+/* AM/PM */
+.ampm-row{display:flex;gap:8px;margin-bottom:12px}
+.ampm-btn{flex:1;padding:13px 8px;border-radius:12px;border:2px solid;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:700;cursor:pointer;text-align:center;transition:all .2s;background:white}
+.ampm-btn.am-e{border-color:var(--e-border);color:var(--e)}
+.ampm-btn.pm-e{border-color:var(--e-border);color:var(--e)}
+.ampm-btn.am-p{border-color:var(--p-border);color:var(--p)}
+.ampm-btn.pm-p{border-color:var(--p-border);color:var(--p)}
+.ampm-btn.done.am-e,.ampm-btn.done.pm-e{background:var(--e);color:white;border-color:var(--e)}
+.ampm-btn.done.am-p,.ampm-btn.done.pm-p{background:var(--p);color:white;border-color:var(--p)}
+.ampm-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;display:block;margin-bottom:2px;opacity:.7}
+.ampm-time{font-size:16px}
+.ampm-check{display:none;font-size:18px}
+.ampm-btn.done .ampm-time{display:none}
+.ampm-btn.done .ampm-check{display:block}
+.ampm-btn.done .ampm-label{opacity:.8}
+
+/* BLEEDING */
+.bleeding-card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 18px;margin-bottom:12px}
+.bleeding-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.bleeding-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mid)}
+.set-day1-btn{font-size:11px;font-weight:600;color:var(--e);background:var(--e-bg);border:1px solid var(--e-border);border-radius:10px;padding:4px 10px;cursor:pointer;display:none}
+.set-day1-btn.vis{display:block}
+.bleeding-scale{display:flex;gap:6px}
+.bleed-opt{flex:1;height:36px;border-radius:8px;border:1.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:14px;font-weight:600;cursor:pointer;background:white;color:var(--text-mid);transition:all .15s;display:flex;align-items:center;justify-content:center}
+.bleed-opt.on{background:#fde8e8;border-color:#e05555;color:#c0392b}
+.bleed-opt[data-v="0"].on{background:var(--bg2);border-color:var(--border);color:var(--text-light)}
+
+/* NEXT MOON */
+.next-moon{background:white;border-radius:12px;padding:11px 16px;font-size:13px;color:var(--text-mid);text-align:center;margin-bottom:12px;border:1px solid var(--border)}
+.next-moon strong{color:var(--text)}
+
+/* ACTION GRID */
+.action-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.act-btn{background:white;border:1.5px solid var(--border);border-radius:var(--radius);padding:14px 8px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;color:var(--text-mid);cursor:pointer;text-align:center;transition:all .15s}
+.act-btn:hover{border-color:var(--e);color:var(--e)}
+.act-icon{font-size:22px;display:block;margin-bottom:5px}
+
+/* OVERLAYS */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center}
+.overlay.vis{display:flex}
+.sheet{background:white;border-radius:20px 20px 0 0;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:20px 20px 52px;animation:su .25s ease}
+@keyframes su{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.sh-handle{width:36px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 18px}
+.sh-close{float:right;background:var(--bg2);border:none;border-radius:50%;width:32px;height:32px;font-size:18px;cursor:pointer;color:var(--text-mid);display:flex;align-items:center;justify-content:center;margin-top:-4px}
+.sh-title{font-family:"Playfair Display",serif;font-size:22px;margin-bottom:4px;color:var(--text)}
+.sh-sub{font-size:13px;color:var(--text-light);margin-bottom:18px}
+
+/* SYMPTOMS */
+.sym-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:18px}
+.sym-btn{padding:11px 8px;border-radius:10px;border:1.5px solid var(--border);background:white;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer;text-align:center;transition:all .15s}
+.sym-btn.on{border-color:var(--p);background:var(--p-bg);color:var(--p)}
+.sym-btn.feel-great.on{border-color:var(--e);background:var(--e-bg);color:var(--e)}
+.libido-row{grid-column:span 2;display:flex;gap:7px}
+.libido-row .sym-btn{flex:1}
+
+/* NOTES */
+.notes-ta{width:100%;min-height:130px;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:"DM Sans",sans-serif;font-size:15px;color:var(--text);resize:none;outline:none;margin-bottom:14px}
+.notes-ta:focus{border-color:var(--e)}
+
+/* CALCULATORS */
+.calc-tabs{display:flex;gap:8px;margin-bottom:18px}
+.calc-tab{flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;color:var(--text-mid);cursor:pointer;text-align:center;background:white;transition:all .15s}
+.calc-tab.on{background:var(--e-bg);border-color:var(--e);color:var(--e)}
+.calc-panel{display:none}
+.calc-panel.vis{display:block}
+.field-pair{display:flex;gap:10px;margin-bottom:12px}
+.field{flex:1;display:flex;flex-direction:column;gap:5px}
+.field label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-light)}
+.field input{padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:14px;color:var(--text);outline:none;-webkit-appearance:none;background:white}
+.field input:focus{border-color:var(--e)}
+.calc-result{display:none;background:var(--bg2);border-radius:12px;padding:14px;margin-top:14px}
+.calc-result.vis{display:block}
+.calc-result-title{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--text-mid);margin-bottom:12px}
+.calc-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px}
+.calc-row:last-child{border:none}
+.calc-hl{font-weight:700;font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.calc-hl.e{color:var(--e)}
+.calc-hl.p{color:var(--p)}
+.calc-math{color:var(--text-light);font-size:12px}
+.calc-val{font-family:"Playfair Display",serif;font-size:20px;font-weight:400}
+
+/* ADJUST */
+.adj-sec{margin-bottom:20px}
+.adj-ttl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.adj-ttl.e{color:var(--e)}
+.adj-ttl.p{color:var(--p)}
+
+/* REPORT */
+.report-field{margin-bottom:14px}
+.report-field label{font-size:12px;font-weight:600;color:var(--text-mid);display:block;margin-bottom:6px}
+.report-field select{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:14px;color:var(--text);outline:none;background:white}
+.report-fmt{display:flex;gap:8px;margin-bottom:14px}
+.report-fmt-btn{flex:1;padding:10px 8px;border-radius:10px;border:1.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:12px;font-weight:600;color:var(--text-mid);cursor:pointer;text-align:center;background:white;transition:all .15s}
+.report-fmt-btn.on{background:var(--e-bg);border-color:var(--e);color:var(--e)}
+
+/* SETTINGS */
+.set-row{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}
+.set-lbl{font-size:15px;color:var(--text);font-weight:500}
+.set-sub{font-size:12px;color:var(--text-light);margin-top:2px}
+.sm-btn{padding:7px 14px;background:var(--bg2);border:1.5px solid var(--border);border-radius:8px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:600;color:var(--text-mid);cursor:pointer}
+
+/* BUTTONS */
+.full-btn{width:100%;padding:14px;border:none;border-radius:12px;font-family:"DM Sans",sans-serif;font-size:15px;font-weight:600;cursor:pointer;color:white;transition:opacity .2s}
+.full-btn:active{opacity:.85}
+.full-btn.eb{background:var(--e)}
+.full-btn.pb{background:var(--p)}
+.full-btn.ab{background:#2a6496}
+.full-btn.gb{background:#888}
+.disclaimer{font-size:12px;color:var(--text-light);line-height:1.6;margin-top:16px;padding:12px;background:var(--bg2);border-radius:8px}
+.saving-indicator{position:fixed;top:12px;right:12px;background:var(--e);color:white;font-size:11px;font-weight:600;padding:4px 10px;border-radius:10px;z-index:999;display:none}
+.saving-indicator.vis{display:block}
+</style>
+</head>
+<body>
+
+<div class="saving-indicator" id="savingInd">Saving...</div>
+
+<!-- AUTH -->
+<div id="authScreen" class="screen active">
+  <div class="auth-wrap">
+    <div class="brand-header">
+      <div class="brand-name">Rhythm<span class="brand-rx">Rx</span></div>
+      <div class="brand-tag">Cyclical Hormone Protocol Tracker</div>
+    </div>
+    <div class="auth-card">
+      <div class="auth-tabs">
+        <button class="auth-tab on" id="tabSI" onclick="switchAuth('signin')">Sign In</button>
+        <button class="auth-tab" id="tabSU" onclick="switchAuth('signup')">Create Account</button>
+      </div>
+      <div id="panelSI">
+        <div class="auth-field"><label>Email</label><input type="email" id="siEmail" placeholder="your@email.com" autocomplete="email"></div>
+        <div class="auth-field"><label>Password</label><input type="password" id="siPw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doSignIn()"></div>
+        <button class="start-btn" onclick="doSignIn()">Sign In</button>
+        <div class="auth-msg err" id="siErr"></div>
+        <div class="auth-footer" style="margin-top:12px">
+          <a href="#" onclick="doReset()" style="color:var(--e);font-size:12px">Forgot password?</a>
+        </div>
+      </div>
+      <div id="panelSU" style="display:none">
+        <div class="auth-field"><label>Email</label><input type="email" id="suEmail" placeholder="your@email.com" autocomplete="email"></div>
+        <div class="auth-field"><label>Password</label><input type="password" id="suPw" placeholder="At least 6 characters" autocomplete="new-password"></div>
+        <div class="auth-field"><label>Confirm Password</label><input type="password" id="suPw2" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignUp()"></div>
+        <button class="start-btn" onclick="doSignUp()">Create Account</button>
+        <div class="auth-msg" id="suMsg"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETUP -->
+<div id="setupScreen" class="screen">
+  <div style="padding:32px 20px 48px;background:linear-gradient(145deg,#f0f9f4 0%,#ede8f6 60%,#fdf0f9 100%);min-height:100vh">
+  <div class="setup-wrap" style="margin:0 auto">
+    <div class="brand-header"><div class="brand-name">Rhythm<span class="brand-rx">Rx</span></div><div class="brand-tag">Tell us about your protocol</div></div>
+    <div class="setup-card">
+      <div class="sec-label">Calendar Type</div>
+      <div class="pill-group">
+        <div class="pill cal-pill" data-cal="lunar" onclick="selCal(this)">🌕 Lunar</div>
+        <div class="pill cal-pill" data-cal="28day" onclick="selCal(this)">📅 28-Day</div>
+      </div>
+      <div id="day1Sec" style="display:none;margin-top:14px">
+        <div class="sec-label">Your Day 1</div>
+        <input type="date" id="day1Input" class="setup-input">
+      </div>
+    </div>
+    <div class="setup-card">
+      <div class="sec-label" style="color:var(--e)">Estradiol Level</div>
+      <div class="pill-group" id="eGroup">
+        <div class="pill e-pill" data-lv="-2" onclick="selLv('e',this)">E−2</div>
+        <div class="pill e-pill" data-lv="-1" onclick="selLv('e',this)">E−1</div>
+        <div class="pill e-pill on" data-lv="0" onclick="selLv('e',this)">Base E</div>
+        <div class="pill e-pill" data-lv="1" onclick="selLv('e',this)">E+1</div>
+        <div class="pill e-pill" data-lv="2" onclick="selLv('e',this)">E+2</div>
+        <div class="pill e-pill" data-lv="3" onclick="selLv('e',this)">E+3</div>
+        <div class="pill e-pill" data-lv="4" onclick="selLv('e',this)">E+4</div>
+        <div class="pill e-pill" data-lv="5" onclick="selLv('e',this)">E+5</div>
+        <div class="pill e-pill" data-lv="6" onclick="selLv('e',this)">E+6</div>
+        <div class="pill e-pill" data-lv="7" onclick="selLv('e',this)">E+7</div>
+        <div class="pill e-pill" data-lv="8" onclick="selLv('e',this)">E+8</div>
+      </div>
+    </div>
+    <div class="setup-card">
+      <div class="sec-label" style="color:var(--p)">Progesterone Level</div>
+      <div class="pill-group" id="pGroup">
+        <div class="pill p-pill" data-lv="-2" onclick="selLv('p',this)">P−2</div>
+        <div class="pill p-pill" data-lv="-1" onclick="selLv('p',this)">P−1</div>
+        <div class="pill p-pill on" data-lv="0" onclick="selLv('p',this)">Base P</div>
+        <div class="pill p-pill" data-lv="1" onclick="selLv('p',this)">P+1</div>
+        <div class="pill p-pill" data-lv="2" onclick="selLv('p',this)">P+2</div>
+      </div>
+    </div>
+    <button class="start-btn" onclick="startApp()">Start Tracking</button>
+    <div id="setupErr" class="err"></div>
+  </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="mainScreen" class="screen">
+  <div class="topbar">
+    <div class="topbar-brand">Rhythm<span class="rx">Rx</span></div>
+    <div class="topbar-right">
+      <button class="icon-btn" onclick="openAdj()">⚙️</button>
+      <button class="icon-btn" onclick="openOL('settingsOL')">☰</button>
+    </div>
+  </div>
+  <div class="main-body">
+    <div class="date-card">
+      <div class="date-nav-row">
+        <button class="nav-btn" onclick="shiftDay(-1)">←</button>
+        <div class="date-center">
+          <div class="date-dow" id="ddow"></div>
+          <div class="date-full" id="dfull"></div>
+          <div class="date-cycle" id="dcycle"></div>
+          <div id="dphase"></div>
+        </div>
+        <button class="nav-btn" onclick="shiftDay(1)">→</button>
+      </div>
+    </div>
+    <button class="back-btn" id="backBtn" onclick="jumpToday()">↩ Back to Today</button>
+    <div class="fm-badge" id="fmBadge">🌕 Full Moon</div>
+    <div id="doseArea"></div>
+    <div id="ampmArea"></div>
+    <div class="bleeding-card">
+      <div class="bleeding-header">
+        <div class="bleeding-title">Bleeding Today</div>
+        <button class="set-day1-btn" id="setDay1Btn" onclick="setAsDay1()">Set as Day 1</button>
+      </div>
+      <div class="bleeding-scale" id="bleedScale"></div>
+    </div>
+    <div class="next-moon" id="nextMoon" style="display:none"></div>
+    <div class="action-grid">
+      <button class="act-btn" onclick="openSymptoms()"><span class="act-icon">📋</span>Log Symptoms</button>
+      <button class="act-btn" onclick="openNotes()"><span class="act-icon">📝</span>Notes</button>
+      <button class="act-btn" onclick="openOL('calcOL')"><span class="act-icon">✈️</span>Calculators</button>
+      <button class="act-btn" onclick="openOL('reportOL')"><span class="act-icon">📄</span>Doctor Summary</button>
+    </div>
+  </div>
+</div>
+
+<!-- SYMPTOMS -->
+<div class="overlay" id="symptomsOL" onclick="bgClose(event,'symptomsOL')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <button class="sh-close" onclick="closeOL('symptomsOL')">✕</button>
+    <div class="sh-title" id="symTitle">Symptoms</div>
+    <div class="sh-sub">Tap to log. Tap again to remove.</div>
+    <div class="sym-grid">
+      <button class="sym-btn" data-s="acne" onclick="togSym(this)">Acne</button>
+      <button class="sym-btn" data-s="angry" onclick="togSym(this)">Angry</button>
+      <button class="sym-btn" data-s="anxiety" onclick="togSym(this)">Anxiety</button>
+      <button class="sym-btn" data-s="bloating" onclick="togSym(this)">Bloating</button>
+      <button class="sym-btn" data-s="brain_fog" onclick="togSym(this)">Brain Fog</button>
+      <button class="sym-btn" data-s="constipation" onclick="togSym(this)">Constipation</button>
+      <button class="sym-btn" data-s="cramps" onclick="togSym(this)">Cramps</button>
+      <button class="sym-btn" data-s="depression" onclick="togSym(this)">Depression</button>
+      <button class="sym-btn" data-s="dizziness" onclick="togSym(this)">Dizziness</button>
+      <button class="sym-btn" data-s="dry_vagina" onclick="togSym(this)">Dry Vagina</button>
+      <button class="sym-btn" data-s="fatigue" onclick="togSym(this)">Fatigue</button>
+      <button class="sym-btn feel-great" data-s="feel_great" onclick="togSym(this)">Feel Great ✨</button>
+      <button class="sym-btn" data-s="headache" onclick="togSym(this)">Headache</button>
+      <button class="sym-btn" data-s="heart_palp" onclick="togSym(this)">Heart Palp.</button>
+      <button class="sym-btn" data-s="hot_flash" onclick="togSym(this)">Hot Flash</button>
+      <button class="sym-btn" data-s="incontinence" onclick="togSym(this)">Incontinence</button>
+      <button class="sym-btn" data-s="insomnia" onclick="togSym(this)">Insomnia</button>
+      <button class="sym-btn" data-s="irritable" onclick="togSym(this)">Irritable</button>
+      <button class="sym-btn" data-s="itching" onclick="togSym(this)">Itching</button>
+      <button class="sym-btn" data-s="joint_pain" onclick="togSym(this)">Joint Pain</button>
+      <button class="sym-btn" data-s="nausea" onclick="togSym(this)">Nausea</button>
+      <button class="sym-btn" data-s="night_sweats" onclick="togSym(this)">Night Sweats</button>
+      <button class="sym-btn" data-s="sad" onclick="togSym(this)">Sad</button>
+      <button class="sym-btn" data-s="sore_breasts" onclick="togSym(this)">Sore Breasts</button>
+      <button class="sym-btn" data-s="spotting" onclick="togSym(this)">Spotting</button>
+      <button class="sym-btn" data-s="teary" onclick="togSym(this)">Teary</button>
+      <button class="sym-btn" data-s="tingling" onclick="togSym(this)">Tingling</button>
+      <button class="sym-btn" data-s="tired" onclick="togSym(this)">Tired</button>
+      <div class="libido-row">
+        <button class="sym-btn" data-s="libido_low" onclick="togSym(this)">Libido Low</button>
+        <button class="sym-btn" data-s="libido_high" onclick="togSym(this)">Libido High</button>
+      </div>
+    </div>
+    <button class="full-btn pb" onclick="saveSymptoms()">Save Symptoms</button>
+    <div id="symMsg"></div>
+  </div>
+</div>
+
+<!-- NOTES -->
+<div class="overlay" id="notesOL" onclick="bgClose(event,'notesOL')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <button class="sh-close" onclick="closeOL('notesOL')">✕</button>
+    <div class="sh-title" id="notesTitle">Notes</div>
+    <textarea class="notes-ta" id="notesTA" placeholder="Add notes for this day..."></textarea>
+    <button class="full-btn eb" onclick="saveNotes()">Save Notes</button>
+    <div id="notesMsg"></div>
+  </div>
+</div>
+
+<!-- CALCULATORS -->
+<div class="overlay" id="calcOL" onclick="bgClose(event,'calcOL')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <button class="sh-close" onclick="closeOL('calcOL')">✕</button>
+    <div class="sh-title">Calculators</div>
+    <div class="calc-tabs">
+      <button class="calc-tab on" id="tabTravel" onclick="switchTab('travel')">✈️ Travel</button>
+      <button class="calc-tab" id="tabSupply" onclick="switchTab('supply')">💊 Supply</button>
+    </div>
+    <div class="calc-panel vis" id="panelTravel">
+      <div class="sh-sub" style="margin-top:-8px;margin-bottom:14px">How many syringes do I need for a trip?</div>
+      <div class="field-pair">
+        <div class="field"><label>Depart</label><input type="date" id="depDate"></div>
+        <div class="field"><label>Return</label><input type="date" id="retDate"></div>
+      </div>
+      <button class="full-btn eb" onclick="calcTravel()">Calculate</button>
+      <div id="travelErr" class="err"></div>
+      <div class="calc-result" id="travelRes"><div class="calc-result-title" id="travelTtl"></div><div id="travelRows"></div></div>
+    </div>
+    <div class="calc-panel" id="panelSupply">
+      <div class="sh-sub" style="margin-top:-8px;margin-bottom:14px">How long will my supply last?</div>
+      <div class="field-pair">
+        <div class="field"><label>E Syringes</label><input type="number" id="eSyringes" placeholder="e.g. 30" min="1"></div>
+        <div class="field"><label>P Syringes</label><input type="number" id="pSyringes" placeholder="e.g. 20" min="0"></div>
+      </div>
+      <div class="field" style="margin-bottom:12px"><label>Starting From</label><input type="date" id="supplyStart"></div>
+      <button class="full-btn eb" onclick="calcSupply()">Calculate</button>
+      <div id="supplyErr" class="err"></div>
+      <div class="calc-result" id="supplyRes"><div class="calc-result-title" id="supplyTtl"></div><div id="supplyRows"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- DOCTOR SUMMARY -->
+<div class="overlay" id="reportOL" onclick="bgClose(event,'reportOL')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <button class="sh-close" onclick="closeOL('reportOL')">✕</button>
+    <div class="sh-title">Doctor Summary</div>
+    <div class="sh-sub">Generate a summary to share with your provider.</div>
+    <div class="report-field">
+      <label>Format</label>
+      <div class="report-fmt">
+        <button class="report-fmt-btn on" id="fmtStd" onclick="selFmt('std')">Standard</button>
+        <button class="report-fmt-btn" id="fmtIRH" onclick="selFmt('irh')">Inner Rhythm Health</button>
+      </div>
+    </div>
+    <div class="report-field">
+      <label>Time Period</label>
+      <select id="reportMonths">
+        <option value="1">Last 1 month</option>
+        <option value="2">Last 2 months</option>
+        <option value="3" selected>Last 3 months</option>
+        <option value="6">Last 6 months</option>
+        <option value="9">Last 9 months</option>
+        <option value="12">Last 12 months</option>
+      </select>
+    </div>
+    <button class="full-btn ab" onclick="genReport()">Generate &amp; Share PDF</button>
+    <div id="reportMsg" class="ok" style="margin-top:10px"></div>
+    <div class="disclaimer">This summary supports your provider conversation. It is not a medical record and does not constitute clinical advice.</div>
+  </div>
+</div>
+
+<!-- ADJUST -->
+<div class="overlay" id="adjOL" onclick="bgClose(event,'adjOL')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <button class="sh-close" onclick="closeOL('adjOL')">✕</button>
+    <div class="sh-title">Adjust Dose Level</div>
+    <div class="sh-sub">Changes apply from today forward.</div>
+    <div class="adj-sec">
+      <div class="adj-ttl e">Estradiol</div>
+      <div class="pill-group" id="adjEG">
+        <div class="pill e-pill" data-lv="-2" onclick="selAdj('e',this)">E−2</div>
+        <div class="pill e-pill" data-lv="-1" onclick="selAdj('e',this)">E−1</div>
+        <div class="pill e-pill" data-lv="0" onclick="selAdj('e',this)">Base E</div>
+        <div class="pill e-pill" data-lv="1" onclick="selAdj('e',this)">E+1</div>
+        <div class="pill e-pill" data-lv="2" onclick="selAdj('e',this)">E+2</div>
+        <div class="pill e-pill" data-lv="3" onclick="selAdj('e',this)">E+3</div>
+        <div class="pill e-pill" data-lv="4" onclick="selAdj('e',this)">E+4</div>
+        <div class="pill e-pill" data-lv="5" onclick="selAdj('e',this)">E+5</div>
+        <div class="pill e-pill" data-lv="6" onclick="selAdj('e',this)">E+6</div>
+        <div class="pill e-pill" data-lv="7" onclick="selAdj('e',this)">E+7</div>
+        <div class="pill e-pill" data-lv="8" onclick="selAdj('e',this)">E+8</div>
+      </div>
+    </div>
+    <div class="adj-sec">
+      <div class="adj-ttl p">Progesterone</div>
+      <div class="pill-group" id="adjPG">
+        <div class="pill p-pill" data-lv="-2" onclick="selAdj('p',this)">P−2</div>
+        <div class="pill p-pill" data-lv="-1" onclick="selAdj('p',this)">P−1</div>
+        <div class="pill p-pill" data-lv="0" onclick="selAdj('p',this)">Base P</div>
+        <div class="pill p-pill" data-lv="1" onclick="selAdj('p',this)">P+1</div>
+        <div class="pill p-pill" data-lv="2" onclick="selAdj('p',this)">P+2</div>
+      </div>
+    </div>
+    <button class="full-btn eb" onclick="applyAdj()">Apply Changes</button>
+    <div id="adjMsg"></div>
+  </div>
+</div>
+
+<!-- SETTINGS -->
+<div class="overlay" id="settingsOL" onclick="bgClose(event,'settingsOL')">
+  <div class="sheet">
+    <div class="sh-handle"></div>
+    <button class="sh-close" onclick="closeOL('settingsOL')">✕</button>
+    <div class="sh-title">Settings</div>
+    <div class="set-row"><div><div class="set-lbl">Calendar</div><div class="set-sub" id="setCalLbl"></div></div><button class="sm-btn" onclick="goSetup()">Change</button></div>
+    <div class="set-row"><div><div class="set-lbl">Estradiol</div><div class="set-sub" id="setELbl"></div></div></div>
+    <div class="set-row"><div><div class="set-lbl">Progesterone</div><div class="set-sub" id="setPLbl"></div></div></div>
+    <div class="set-row"><div><div class="set-lbl">Dose Adjustments</div><div class="set-sub" id="setAdjLbl">None active</div></div><button class="sm-btn" onclick="resetAdj()">Reset</button></div>
+    <div class="set-row"><div><div class="set-lbl">Account</div><div class="set-sub" id="setEmail"></div></div><button class="sm-btn" onclick="doSignOut()">Sign Out</button></div>
+    <div class="set-row" style="border:none"><div><div class="set-lbl">Support</div><div class="set-sub">protocolsupport [at] icloud.com</div></div></div>
+    <div class="disclaimer">RhythmRx provides hormone dose scheduling information only. It does not constitute medical advice and is not a substitute for guidance from a licensed healthcare provider.</div>
+  </div>
+</div>
+
+<script>
+const SURL = 'https://lsfpzisexsutsgeykvpw.supabase.co';
+const SKEY = 'sb_publishable_D_klwoKs16qZjzcI6FNIMg_P7OwmDgt';
+const sb = supabase.createClient(SURL, SKEY);
+
+const FM = [
+  [2026,2,3],[2026,3,1],[2026,4,1],[2026,4,31],[2026,5,30],[2026,6,29],[2026,7,28],
+  [2026,8,26],[2026,9,26],[2026,10,24],[2026,11,24],[2027,0,22],[2027,1,20],
+  [2027,2,22],[2027,3,20],[2027,4,20],[2027,5,19],[2027,6,18],[2027,7,17],
+  [2027,8,15],[2027,9,15],[2027,10,13],[2027,11,13],
+].map(([y,m,d])=>new Date(y,m,d));
+
+const MO=['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const EC={6:6,7:6,8:6,9:7,10:7,11:7,12:8,13:2,14:2,15:3,16:3,17:3};
+const PC={14:4,15:4,16:8,17:8,18:10,19:10,20:12,21:14,22:12,23:10,24:10,25:8,26:8,27:4,28:4};
+
+let S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,eAdj:null,pAdj:null};
+let LOGS={};
+let currentUser=null;
+let offset=0,adjE=0,adjP=0,reportFmt='std';
+
+function dk(d){return d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();}
+function tod(){const t=new Date();return new Date(t.getFullYear(),t.getMonth(),t.getDate());}
+function showSaving(){const el=document.getElementById('savingInd');el.classList.add('vis');setTimeout(()=>el.classList.remove('vis'),1200);}
+
+// ── SUPABASE SAVE/LOAD ──
+async function saveSettings(){
+  if(!currentUser)return;
+  showSaving();
+  await sb.from('user_settings').upsert({
+    user_id:currentUser.id,
+    cal_type:S.calType,
+    day1:S.day1?new Date(S.day1).toISOString().split('T')[0]:null,
+    e_level:S.eLevel,
+    p_level:S.pLevel,
+    e_adj:S.eAdj,
+    p_adj:S.pAdj,
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id'});
+}
+
+async function loadSettings(){
+  if(!currentUser)return;
+  const{data}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).single();
+  if(data){
+    S.calType=data.cal_type||'lunar';
+    S.day1=data.day1?new Date(data.day1):null;
+    S.eLevel=data.e_level||0;
+    S.pLevel=data.p_level||0;
+    S.eAdj=data.e_adj||null;
+    S.pAdj=data.p_adj||null;
+    S.setup=true;
+  }
+}
+
+async function saveLog(dateKey,logData){
+  if(!currentUser)return;
+  showSaving();
+  const[y,m,d]=dateKey.split('-').map(Number);
+  const logDate=new Date(y,m,d).toISOString().split('T')[0];
+  await sb.from('daily_logs').upsert({
+    user_id:currentUser.id,
+    log_date:logDate,
+    symptoms:logData.symptoms||[],
+    notes:logData.notes||'',
+    bleeding:logData.bleeding||0,
+    dose_log:logData.doseLog||{eAM:false,ePM:false,pAM:false,pPM:false},
+    updated_at:new Date().toISOString()
+  },{onConflict:'user_id,log_date'});
+}
+
+async function loadLogs(){
+  if(!currentUser)return;
+  const{data}=await sb.from('daily_logs').select('*').eq('user_id',currentUser.id);
+  if(data){
+    data.forEach(row=>{
+      const d=new Date(row.log_date);
+      const key=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+      LOGS[key]={symptoms:row.symptoms||[],notes:row.notes||'',bleeding:row.bleeding||0,doseLog:row.dose_log||{eAM:false,ePM:false,pAM:false,pPM:false}};
+    });
+  }
+}
+
+// ── AUTH ──
+function switchAuth(t){
+  document.getElementById('tabSI').classList.toggle('on',t==='signin');
+  document.getElementById('tabSU').classList.toggle('on',t==='signup');
+  document.getElementById('panelSI').style.display=t==='signin'?'block':'none';
+  document.getElementById('panelSU').style.display=t==='signup'?'block':'none';
+}
+
+async function doSignIn(){
+  const email=document.getElementById('siEmail').value.trim();
+  const pw=document.getElementById('siPw').value;
+  const err=document.getElementById('siErr');
+  err.textContent='Signing in...';
+  const{error}=await sb.auth.signInWithPassword({email,password:pw});
+  if(error){err.textContent=error.message;}
+  else{err.textContent='';}
+}
+
+async function doSignUp(){
+  const email=document.getElementById('suEmail').value.trim();
+  const pw=document.getElementById('suPw').value;
+  const pw2=document.getElementById('suPw2').value;
+  const msg=document.getElementById('suMsg');
+  if(pw!==pw2){msg.textContent='Passwords do not match.';msg.className='auth-msg err';return;}
+  if(pw.length<6){msg.textContent='Password must be at least 6 characters.';msg.className='auth-msg err';return;}
+  msg.textContent='Creating account...';
+  const{error}=await sb.auth.signUp({email,password:pw});
+  if(error){msg.textContent=error.message;msg.className='auth-msg err';}
+  else{msg.textContent='Account created! Check your email to confirm, then sign in.';msg.className='auth-msg ok';}
+}
+
+async function doReset(){
+  const email=document.getElementById('siEmail').value.trim();
+  if(!email){document.getElementById('siErr').textContent='Enter your email first.';return;}
+  await sb.auth.resetPasswordForEmail(email);
+  document.getElementById('siErr').textContent='Reset link sent — check your email.';
+  document.getElementById('siErr').style.color='var(--e)';
+}
+
+async function doSignOut(){
+  await sb.auth.signOut();
+  closeOL('settingsOL');
+  currentUser=null;S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,eAdj:null,pAdj:null};
+  LOGS={};
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('authScreen').classList.add('active');
+}
+
+// ── CYCLE ──
+function cycleInfo(d){
+  if(S.calType==='lunar')return cycleLunar(d);
+  return cycle28(d);
+}
+function cycleLunar(d){
+  const t=d.getTime();let cs=null,ns=null;
+  for(let i=0;i<FM.length;i++){if(FM[i].getTime()<=t){cs=FM[i];ns=FM[i+1]||null;}}
+  if(!cs)return null;
+  const elapsed=Math.round((t-cs.getTime())/86400000);
+  const cl=ns?Math.round((ns.getTime()-cs.getTime())/86400000):28;
+  let cycleDay,isFiller=false;
+  if(elapsed<=16){cycleDay=elapsed+12;}
+  else{const dtn=cl-elapsed;cycleDay=Math.max(1,12-dtn);isFiller=true;}
+  return{cycleDay,cycleLength:cl,isFullMoon:elapsed===0,nextFM:ns,isFiller};
+}
+function cycle28(d){
+  if(!S.day1)return null;
+  const t=d.getTime(),d1=new Date(S.day1).getTime();
+  const elapsed=Math.round((t-d1)/86400000);
+  if(elapsed<0)return null;
+  return{cycleDay:(elapsed%28)+1,cycleLength:28,isFullMoon:false,nextFM:null,isFiller:false};
+}
+function phase(cd){
+  if(cd<=13)return{name:'Follicular',cls:'phase-follicular'};
+  if(cd<=14)return{name:'Ovulatory',cls:'phase-ovulatory'};
+  return{name:'Luteal',cls:'phase-luteal'};
+}
+function getDoses(d){
+  const info=cycleInfo(d);if(!info)return null;
+  const{cycleDay}=info,t=d.getTime();
+  let eL=S.eLevel,pL=S.pLevel;
+  if(S.eAdj&&t>=new Date(S.eAdj.fromMs).getTime())eL=S.eAdj.level;
+  if(S.pAdj&&t>=new Date(S.pAdj.fromMs).getTime())pL=S.pAdj.level;
+  const eBase=EC[cycleDay]!==undefined?EC[cycleDay]:4;
+  const pBase=PC[cycleDay]!==undefined?PC[cycleDay]:0;
+  return{...info,eDose:Math.max(0,eBase+eL),pDose:pBase>0?Math.max(0,pBase+pL):0};
+}
+function lvLbl(t,lv){if(lv===0)return'Base '+t.toUpperCase();return t.toUpperCase()+(lv>0?'+':'')+lv;}
+
+// ── SETUP ──
+let sC=null,sE=0,sP=0;
+function selCal(el){document.querySelectorAll('.cal-pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');sC=el.dataset.cal;document.getElementById('day1Sec').style.display=sC==='28day'?'block':'none';}
+function selLv(t,el){const g=t==='e'?'#eGroup':'#pGroup';document.querySelectorAll(g+' .pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');if(t==='e')sE=parseInt(el.dataset.lv);else sP=parseInt(el.dataset.lv);}
+async function startApp(){
+  const err=document.getElementById('setupErr');
+  if(!sC){err.textContent='Please choose a calendar type.';return;}
+  if(sC==='28day'){const v=document.getElementById('day1Input').value;if(!v){err.textContent='Please enter your Day 1 date.';return;}const[y,m,d]=v.split('-').map(Number);S.day1=new Date(y,m-1,d).toISOString();}
+  else{S.day1=null;}
+  S.calType=sC;S.eLevel=sE;S.pLevel=sP;S.setup=true;
+  await saveSettings();showMain();
+}
+function goSetup(){
+  closeOL('settingsOL');
+  document.getElementById('mainScreen').classList.remove('active');
+  document.getElementById('setupScreen').classList.add('active');
+  if(S.calType){document.querySelectorAll('.cal-pill').forEach(p=>{p.classList.toggle('on',p.dataset.cal===S.calType);});sC=S.calType;document.getElementById('day1Sec').style.display=S.calType==='28day'?'block':'none';}
+  document.querySelectorAll('#eGroup .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===S.eLevel));
+  document.querySelectorAll('#pGroup .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===S.pLevel));
+  sE=S.eLevel;sP=S.pLevel;
+}
+function showMain(){
+  document.getElementById('setupScreen').classList.remove('active');
+  document.getElementById('mainScreen').classList.add('active');
+  updSettings();render();
+}
+
+// ── RENDER ──
+function render(){
+  const td=tod(),vd=new Date(td);vd.setDate(vd.getDate()+offset);
+  const isToday=offset===0,info=getDoses(vd),key=dk(vd);
+  document.getElementById('ddow').textContent=DW[vd.getDay()];
+  document.getElementById('dfull').innerHTML=MO[vd.getMonth()]+' '+vd.getDate()+', '+vd.getFullYear()+(isToday?' <span class="today-chip">Today</span>':'');
+  if(info){
+    document.getElementById('dcycle').textContent='Day '+info.cycleDay+(S.calType==='lunar'?' of '+info.cycleLength:'');
+    const ph=phase(info.cycleDay);
+    document.getElementById('dphase').innerHTML='<span class="date-phase '+ph.cls+'">'+ph.name+'</span>';
+  } else {document.getElementById('dcycle').textContent='—';document.getElementById('dphase').innerHTML='';}
+  document.getElementById('backBtn').classList.toggle('vis',offset!==0);
+  document.getElementById('fmBadge').classList.toggle('vis',!!(info&&info.isFullMoon));
+  const da=document.getElementById('doseArea');da.innerHTML='';
+  if(info){
+    da.innerHTML='<div class="dose-card ec"><div><div class="dose-hormone">Estradiol</div><div class="dose-level">'+lvLbl('e',S.eLevel)+'</div></div><div style="text-align:right"><div class="dose-num">'+info.eDose+'</div><div class="dose-unit">LINES</div></div></div>';
+    if(info.pDose>0)da.innerHTML+='<div class="dose-card pc"><div><div class="dose-hormone">Progesterone</div><div class="dose-level">'+lvLbl('p',S.pLevel)+'</div></div><div style="text-align:right"><div class="dose-num">'+info.pDose+'</div><div class="dose-unit">LINES</div></div></div>';
+  }
+  renderAMPM(info,vd,key);renderBleeding(vd,key);
+  const nm=document.getElementById('nextMoon');
+  if(S.calType==='lunar'&&info&&info.nextFM){
+    const du=Math.round((info.nextFM.getTime()-td.getTime())/86400000);
+    if(du>0){nm.style.display='block';nm.innerHTML='🌕 Next full moon: <strong>'+MO[info.nextFM.getMonth()]+' '+info.nextFM.getDate()+'</strong> &nbsp;·&nbsp; '+du+' day'+(du!==1?'s':'');}
+    else nm.style.display='none';
+  } else nm.style.display='none';
+}
+
+function renderAMPM(info,vd,key){
+  const aa=document.getElementById('ampmArea');
+  if(!info){aa.innerHTML='';return;}
+  const log=(LOGS[key]&&LOGS[key].doseLog)||{eAM:false,ePM:false,pAM:false,pPM:false};
+  let h='<div class="ampm-row">' +
+    '<button class="ampm-btn am-e'+(log.eAM?' done':'')+'" onclick="togDose(&quot;eAM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Estradiol</span><span class="ampm-time">AM</span><span class="ampm-check">✓ AM</span></button>' +
+    '<button class="ampm-btn pm-e'+(log.ePM?' done':'')+'" onclick="togDose(&quot;ePM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Estradiol</span><span class="ampm-time">PM</span><span class="ampm-check">✓ PM</span></button>';
+  if(info.pDose>0){
+    h+='<button class="ampm-btn am-p'+(log.pAM?' done':'')+'" onclick="togDose(&quot;pAM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Progest.</span><span class="ampm-time">AM</span><span class="ampm-check">✓ AM</span></button>' +
+       '<button class="ampm-btn pm-p'+(log.pPM?' done':'')+'" onclick="togDose(&quot;pPM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Progest.</span><span class="ampm-time">PM</span><span class="ampm-check">✓ PM</span></button>';
+  }
+  aa.innerHTML=h+'</div>';
+}
+
+async function togDose(field,key){
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  if(!LOGS[key].doseLog)LOGS[key].doseLog={eAM:false,ePM:false,pAM:false,pPM:false};
+  LOGS[key].doseLog[field]=!LOGS[key].doseLog[field];
+  await saveLog(key,LOGS[key]);
+  const vd=new Date(tod());vd.setDate(vd.getDate()+offset);
+  renderAMPM(getDoses(vd),vd,key);
+}
+
+function renderBleeding(vd,key){
+  const val=(LOGS[key]&&LOGS[key].bleeding!==undefined)?LOGS[key].bleeding:0;
+  document.getElementById('bleedScale').innerHTML=[0,1,2,3,4,5].map(v=>'<button class="bleed-opt'+(val===v?' on':'')+'" data-v="'+v+'" onclick="setBleeding('+v+',''+key+'')">'+( v===0?'None':v)+'</button>').join('');
+  document.getElementById('setDay1Btn').classList.toggle('vis',val>0);
+}
+
+async function setBleeding(v,key){
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  LOGS[key].bleeding=v;
+  await saveLog(key,LOGS[key]);
+  const vd=new Date(tod());vd.setDate(vd.getDate()+offset);
+  renderBleeding(vd,key);
+}
+
+async function setAsDay1(){
+  const vd=new Date(tod());vd.setDate(vd.getDate()+offset);
+  if(S.calType==='28day'){
+    S.day1=vd.toISOString();
+    await saveSettings();updSettings();render();
+    alert('Day 1 updated to '+MO[vd.getMonth()]+' '+vd.getDate()+'. Your data is preserved.');
+  } else {alert('Day 1 resets automatically with the full moon on the lunar calendar.');}
+}
+
+function shiftDay(dir){offset+=dir;render();}
+function jumpToday(){offset=0;render();}
+
+// ── SYMPTOMS ──
+function openSymptoms(){
+  const vd=new Date(tod());vd.setDate(vd.getDate()+offset);
+  document.getElementById('symTitle').textContent='Symptoms — '+MOS[vd.getMonth()]+' '+vd.getDate();
+  document.querySelectorAll('.sym-btn').forEach(b=>b.classList.remove('on'));
+  const saved=(LOGS[dk(vd)]&&LOGS[dk(vd)].symptoms)||[];
+  saved.forEach(s=>{const b=document.querySelector('.sym-btn[data-s="'+s+'"]');if(b)b.classList.add('on');});
+  document.getElementById('symMsg').textContent='';openOL('symptomsOL');
+}
+function togSym(el){el.classList.toggle('on');}
+async function saveSymptoms(){
+  const vd=new Date(tod());vd.setDate(vd.getDate()+offset);const key=dk(vd);
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  LOGS[key].symptoms=[...document.querySelectorAll('.sym-btn.on')].map(b=>b.dataset.s);
+  await saveLog(key,LOGS[key]);
+  document.getElementById('symMsg').textContent='✓ Saved';document.getElementById('symMsg').className='ok';
+  setTimeout(()=>closeOL('symptomsOL'),700);
+}
+
+// ── NOTES ──
+function openNotes(){
+  const vd=new Date(tod());vd.setDate(vd.getDate()+offset);
+  document.getElementById('notesTitle').textContent='Notes — '+MOS[vd.getMonth()]+' '+vd.getDate();
+  document.getElementById('notesTA').value=(LOGS[dk(vd)]&&LOGS[dk(vd)].notes)||'';
+  document.getElementById('notesMsg').textContent='';openOL('notesOL');
+}
+async function saveNotes(){
+  const vd=new Date(tod());vd.setDate(vd.getDate()+offset);const key=dk(vd);
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  LOGS[key].notes=document.getElementById('notesTA').value;
+  await saveLog(key,LOGS[key]);
+  document.getElementById('notesMsg').textContent='✓ Saved';document.getElementById('notesMsg').className='ok';
+  setTimeout(()=>closeOL('notesOL'),700);
+}
+
+// ── CALCULATORS ──
+function switchTab(t){
+  document.getElementById('tabTravel').classList.toggle('on',t==='travel');
+  document.getElementById('tabSupply').classList.toggle('on',t==='supply');
+  document.getElementById('panelTravel').classList.toggle('vis',t==='travel');
+  document.getElementById('panelSupply').classList.toggle('vis',t==='supply');
+}
+function calcTravel(){
+  const dv=document.getElementById('depDate').value,rv=document.getElementById('retDate').value;
+  const errEl=document.getElementById('travelErr'),res=document.getElementById('travelRes');
+  errEl.textContent='';res.classList.remove('vis');
+  if(!dv||!rv){errEl.textContent='Please enter both dates.';return;}
+  const[dy,dm,dd]=dv.split('-').map(Number),[ry,rm,rd]=rv.split('-').map(Number);
+  const dep=new Date(dy,dm-1,dd),ret=new Date(ry,rm-1,rd);
+  if(ret<dep){errEl.textContent='Return must be after departure.';return;}
+  let tE=0,tP=0,cur=new Date(dep);
+  while(cur<=ret){const i=getDoses(cur);if(i){tE+=i.eDose;tP+=i.pDose;}cur.setDate(cur.getDate()+1);}
+  const nd=Math.round((ret-dep)/86400000)+1;
+  document.getElementById('travelTtl').textContent=MOS[dep.getMonth()]+' '+dep.getDate()+' – '+MOS[ret.getMonth()]+' '+ret.getDate()+' · '+nd+' day'+(nd!==1?'s':'');
+  document.getElementById('travelRows').innerHTML='<div class="calc-row"><span class="calc-hl e">Estradiol</span><span class="calc-math">'+tE+' lines ÷ 30</span><span class="calc-val" style="color:var(--e)">'+(tE/30).toFixed(1)+' syringes</span></div><div class="calc-row"><span class="calc-hl p">Progesterone</span><span class="calc-math">'+(tP>0?tP+' lines ÷ 30':'—')+'</span><span class="calc-val" style="color:var(--p)">'+(tP>0?(tP/30).toFixed(1)+' syringes':'none needed')+'</span></div>';
+  res.classList.add('vis');
+}
+function calcSupply(){
+  const eS=parseInt(document.getElementById('eSyringes').value)||0;
+  const pS=parseInt(document.getElementById('pSyringes').value)||0;
+  const sv=document.getElementById('supplyStart').value;
+  const errEl=document.getElementById('supplyErr'),res=document.getElementById('supplyRes');
+  errEl.textContent='';res.classList.remove('vis');
+  if(!sv){errEl.textContent='Please enter a start date.';return;}
+  if(eS<=0&&pS<=0){errEl.textContent='Please enter at least one syringe count.';return;}
+  const[sy,sm,sd]=sv.split('-').map(Number);
+  const start=new Date(sy,sm-1,sd);
+  let eLines=eS*30,pLines=pS*30,eEnd=null,pEnd=null,cur=new Date(start);
+  for(let i=0;i<730;i++){
+    const info=getDoses(cur);
+    if(info){
+      if(eEnd===null){eLines-=info.eDose;if(eLines<=0)eEnd=new Date(cur);}
+      if(pEnd===null&&pS>0){pLines-=info.pDose;if(pLines<=0)pEnd=new Date(cur);}
+    }
+    if((eEnd||eS===0)&&(pEnd||pS===0))break;
+    cur.setDate(cur.getDate()+1);
+  }
+  const fmt=d=>d?MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear():'beyond forecast';
+  const days=d=>d?Math.round((d.getTime()-start.getTime())/86400000)+' days':'';
+  document.getElementById('supplyTtl').textContent='Supply duration from '+MOS[start.getMonth()]+' '+start.getDate();
+  let rows='';
+  if(eS>0)rows+='<div class="calc-row"><span class="calc-hl e">Estradiol ('+eS+' syringes)</span><span class="calc-val" style="color:var(--e);font-size:14px;font-family:DM Sans">'+fmt(eEnd)+'<br><small style="color:var(--text-light)">'+days(eEnd)+'</small></span></div>';
+  if(pS>0)rows+='<div class="calc-row"><span class="calc-hl p">Progesterone ('+pS+' syringes)</span><span class="calc-val" style="color:var(--p);font-size:14px;font-family:DM Sans">'+fmt(pEnd)+'<br><small style="color:var(--text-light)">'+days(pEnd)+'</small></span></div>';
+  document.getElementById('supplyRows').innerHTML=rows;
+  res.classList.add('vis');
+}
+
+// ── REPORT ──
+function selFmt(f){
+  reportFmt=f;
+  document.getElementById('fmtStd').classList.toggle('on',f==='std');
+  document.getElementById('fmtIRH').classList.toggle('on',f==='irh');
+}
+
+function genReport(){
+  const months=parseInt(document.getElementById('reportMonths').value);
+  const endDate=tod(),startDate=new Date(endDate);
+  startDate.setMonth(startDate.getMonth()-months);
+  const calLabel=S.calType==='lunar'?'Lunar Calendar':'28-Day Calendar';
+  let rows=[],cur=new Date(startDate);
+  while(cur<=endDate){
+    const info=getDoses(cur),key=dk(cur);
+    const log=LOGS[key]||{};
+    const syms=(log.symptoms||[]).map(s=>s.replace(/_/g,' ')).join(', ');
+    const note=log.notes||'',bleed=log.bleeding||0;
+    if(info)rows.push({date:new Date(cur),day:info.cycleDay,cl:info.cycleLength,e:info.eDose,p:info.pDose,syms,note,bleed,fm:info.isFullMoon,phase:phase(info.cycleDay).name});
+    cur.setDate(cur.getDate()+1);
+  }
+
+  let html='';
+  if(reportFmt==='std'){
+    // Standard summary
+    const symByDay={};
+    rows.forEach(r=>{if(r.syms)r.syms.split(', ').forEach(s=>{if(!s)return;if(!symByDay[s])symByDay[s]=[];symByDay[s].push(r.day);});});
+    let symSum='<p style="color:#777;font-size:13px">No symptoms logged.</p>';
+    const sk=Object.keys(symByDay);
+    if(sk.length){symSum='<table style="width:100%;border-collapse:collapse">'+sk.sort().map(s=>{const days=[...new Set(symByDay[s])].sort((a,b)=>a-b);return'<tr><td style="padding:6px 10px;font-weight:600;text-transform:capitalize">'+s+'</td><td style="padding:6px 10px;color:#555">Days '+days.join(', ')+'</td><td style="padding:6px 10px;color:#888">'+days.length+' occurrence'+(days.length!==1?'s':'')+'</td></tr>';}).join('')+'</table>';}
+    const dRows=rows.filter(r=>r.syms||r.note||r.bleed>0).map(r=>'<tr style="border-bottom:1px solid #eee"><td style="padding:8px 10px;font-size:13px;white-space:nowrap">'+MOS[r.date.getMonth()]+' '+r.date.getDate()+'</td><td style="padding:8px 10px;font-size:13px;text-align:center">'+r.day+'</td><td style="padding:8px 10px;font-size:13px;color:#1b6e3a;text-align:center">'+r.e+'</td><td style="padding:8px 10px;font-size:13px;color:#6b2d8b;text-align:center">'+(r.p||'—')+'</td><td style="padding:8px 10px;font-size:13px;text-align:center">'+(r.bleed>0?r.bleed:'')+'</td><td style="padding:8px 10px;font-size:13px;color:#555">'+r.syms+'</td><td style="padding:8px 10px;font-size:13px;color:#777">'+r.note+'</td></tr>').join('');
+    html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Helvetica Neue,Arial,sans-serif;color:#111;padding:32px;max-width:800px;margin:0 auto}h1{font-size:24px;margin-bottom:4px}h2{font-size:16px;margin:24px 0 10px;border-bottom:2px solid #eee;padding-bottom:6px}.meta{font-size:13px;color:#777;margin-bottom:24px}.tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;margin-right:8px}.et{background:#edf7f1;color:#1b6e3a}.pt{background:#f5edf9;color:#6b2d8b}.disclaimer{margin-top:32px;padding:12px;background:#f8f8f8;border-radius:8px;font-size:12px;color:#888;line-height:1.6}</style></head><body><h1>RhythmRx — Provider Summary</h1><div class="meta">Generated: '+MO[tod().getMonth()]+' '+tod().getDate()+', '+tod().getFullYear()+' &nbsp;·&nbsp; Period: '+MOS[startDate.getMonth()]+' '+startDate.getDate()+' – '+MOS[endDate.getMonth()]+' '+endDate.getDate()+' ('+months+' month'+(months!==1?'s':'')+')<br>Calendar: '+calLabel+' &nbsp;·&nbsp; <span class="tag et">'+lvLbl('e',S.eLevel)+'</span><span class="tag pt">'+lvLbl('p',S.pLevel)+'</span></div><h2>Symptom Summary</h2>'+symSum+(dRows?'<h2>Daily Log</h2><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f0f0f0"><th style="padding:8px 10px;text-align:left;font-size:12px">Date</th><th style="padding:8px 10px;font-size:12px">Day</th><th style="padding:8px 10px;font-size:12px;color:#1b6e3a">E</th><th style="padding:8px 10px;font-size:12px;color:#6b2d8b">P</th><th style="padding:8px 10px;font-size:12px">Bleeding</th><th style="padding:8px 10px;text-align:left;font-size:12px">Symptoms</th><th style="padding:8px 10px;text-align:left;font-size:12px">Notes</th></tr></thead><tbody>'+dRows+'</tbody></table>':'')+' <div class="disclaimer">Generated by RhythmRx. For informational purposes only. Not a medical record.</div></body></html>';
+  } else {
+    // Inner Rhythm Health — Interim Symptom Update format
+    const IRH_SYMS=['hot_flash','night_sweats','insomnia','dry_vagina','libido_low','headache','joint_pain','fatigue','brain_fog','anxiety','depression','irritable','hair_loss','dry_skin','acne','heart_palp','sore_breasts','bloating','cramps','incontinence'];
+    const symByPhase={};
+    rows.forEach(r=>{
+      if(r.syms)r.syms.split(', ').forEach(s=>{
+        if(!s)return;
+        const key2=s.replace(/ /g,'_');
+        if(!symByPhase[key2])symByPhase[key2]={follicular:[],luteal:[]};
+        if(r.day<=16)symByPhase[key2].follicular.push(r.day);
+        else symByPhase[key2].luteal.push(r.day);
+      });
+    });
+    const symRows=IRH_SYMS.map(s=>{
+      const d=symByPhase[s]||{follicular:[],luteal:[]};
+      const fCount=d.follicular.length,lCount=d.luteal.length;
+      const fMark=fCount>0?'✓ ('+fCount+'x)':'';
+      const lMark=lCount>0?'✓ ('+lCount+'x)':'';
+      const label=s.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase());
+      return'<tr><td style="padding:6px 10px;font-size:13px">'+label+'</td><td style="padding:6px 10px;text-align:center;font-size:13px;color:#1b6e3a">'+fMark+'</td><td style="padding:6px 10px;text-align:center;font-size:13px;color:#6b2d8b">'+lMark+'</td><td style="padding:6px 10px;text-align:center;font-size:12px;color:#888">'+(fCount+lCount>0?(fCount>lCount?'Follicular':lCount>fCount?'Luteal':'Both'):'')+'</td></tr>';
+    }).join('');
+    const bleedRows=rows.filter(r=>r.bleed>0).map(r=>'<tr><td style="padding:6px 10px;font-size:13px">'+MOS[r.date.getMonth()]+' '+r.date.getDate()+'</td><td style="padding:6px 10px;font-size:13px;text-align:center">Day '+r.day+'</td><td style="padding:6px 10px;font-size:13px;text-align:center">'+r.bleed+'/5</td><td style="padding:6px 10px;font-size:13px;color:#777">'+r.note+'</td></tr>').join('');
+    const noteRows=rows.filter(r=>r.note).map(r=>'<tr><td style="padding:6px 10px;font-size:13px;white-space:nowrap">'+MOS[r.date.getMonth()]+' '+r.date.getDate()+'</td><td style="padding:6px 10px;font-size:13px">Day '+r.day+' — '+r.phase+'</td><td style="padding:6px 10px;font-size:13px;color:#555">'+r.note+'</td></tr>').join('');
+    html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Helvetica Neue,Arial,sans-serif;color:#111;padding:32px;max-width:800px;margin:0 auto}h1{font-size:20px;margin-bottom:2px}h2{font-size:14px;font-weight:700;margin:20px 0 8px;border-bottom:1px solid #ddd;padding-bottom:4px;text-transform:uppercase;letter-spacing:.05em;color:#555}.meta{font-size:12px;color:#777;margin-bottom:20px}table{width:100%;border-collapse:collapse;margin-bottom:8px}th{background:#f5f5f5;padding:7px 10px;font-size:11px;text-align:left;text-transform:uppercase;letter-spacing:.05em}td{padding:6px 10px;border-bottom:1px solid #eee}.disclaimer{margin-top:24px;padding:10px;background:#f8f8f8;border-radius:6px;font-size:11px;color:#999;line-height:1.5}</style></head><body><h1>Interim Symptom Update</h1><div style="font-size:13px;color:#555;margin-bottom:4px">Inner Rhythm Health Format &nbsp;·&nbsp; Generated by RhythmRx</div><div class="meta">Date: '+MO[tod().getMonth()]+' '+tod().getDate()+', '+tod().getFullYear()+'<br>Period: '+MOS[startDate.getMonth()]+' '+startDate.getDate()+' – '+MOS[endDate.getMonth()]+' '+endDate.getDate()+' ('+months+' month'+(months!==1?'s':'')+') &nbsp;·&nbsp; Calendar: '+calLabel+'<br>Current doses: E — '+lvLbl('e',S.eLevel)+' &nbsp;·&nbsp; P — '+lvLbl('p',S.pLevel)+'</div><h2>Symptom Assessment</h2><p style="font-size:11px;color:#777;margin-bottom:8px">Follicular = Days 1–16 &nbsp;·&nbsp; Luteal = Days 17–28 &nbsp;·&nbsp; Counts show number of days symptom was logged</p><table><thead><tr><th>Symptom</th><th style="text-align:center">Follicular</th><th style="text-align:center">Luteal</th><th style="text-align:center">Phase Worse</th></tr></thead><tbody>'+symRows+'</tbody></table>'+(bleedRows?'<h2>Bleeding Pattern</h2><table><thead><tr><th>Date</th><th>Cycle Day</th><th>Severity (0-5)</th><th>Notes</th></tr></thead><tbody>'+bleedRows+'</tbody></table>':'')+(noteRows?'<h2>Daily Notes</h2><table><thead><tr><th>Date</th><th>Cycle Day / Phase</th><th>Note</th></tr></thead><tbody>'+noteRows+'</tbody></table>':'')+'<div class="disclaimer">Generated by RhythmRx for Inner Rhythm Health intake format. For clinical use only. Not a substitute for direct patient assessment.</div></body></html>';
+  }
+
+  const win=window.open('','_blank');
+  if(win){win.document.write(html);win.document.close();win.focus();setTimeout(()=>{win.print();},500);}
+  document.getElementById('reportMsg').textContent='✓ Report opened — use Share or Print to save as PDF';
+}
+
+// ── ADJUST ──
+function openAdj(){
+  adjE=S.eLevel;adjP=S.pLevel;
+  document.querySelectorAll('#adjEG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjE));
+  document.querySelectorAll('#adjPG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjP));
+  document.getElementById('adjMsg').textContent='';openOL('adjOL');
 }
 function selAdj(t,el){
   const g=t==='e'?'#adjEG':'#adjPG';
