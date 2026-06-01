@@ -1,2 +1,1 @@
-# RhythmRx
-Cyclical bioidentical hormone therapy tracking app
+RhythmRx - Cyclical Hormone Protocol Tracker
