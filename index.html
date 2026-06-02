@@ -6,7 +6,7 @@
 <title>RhythmRx</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.js"></script>
 <style>
 :root{
   --e:#1b6e3a;--e-bg:#edf7f1;--e-mid:#4a9e6a;--e-border:#a8d5b8;
@@ -519,7 +519,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 <script>
 const SURL = 'https://lsfpzisexsutsgeykvpw.supabase.co';
 const SKEY = 'sb_publishable_D_klwoKs16qZjzcI6FNIMg_P7OwmDgt';
-const sb = supabase.createClient(SURL, SKEY);
+const sb = supabase.createClient ? supabase.createClient(SURL, SKEY) : window.supabase.createClient(SURL, SKEY);
 
 const FM = [
   [2026,2,3],[2026,3,1],[2026,4,1],[2026,4,31],[2026,5,30],[2026,6,29],[2026,7,28],
