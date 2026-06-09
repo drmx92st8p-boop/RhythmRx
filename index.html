@@ -6,28 +6,7 @@
 <title>RhythmRx</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script>
-// Dynamically load Supabase and init when ready
-(function() {
-  var s = document.createElement('script');
-  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
-  s.onload = function() {
-    window._sbReady = true;
-    if (window._sbCallback) window._sbCallback();
-  };
-  s.onerror = function() {
-    // Try unpkg fallback
-    var s2 = document.createElement('script');
-    s2.src = 'https://unpkg.com/@supabase/supabase-js@2';
-    s2.onload = function() {
-      window._sbReady = true;
-      if (window._sbCallback) window._sbCallback();
-    };
-    document.head.appendChild(s2);
-  };
-  document.head.appendChild(s);
-})();
-</script>
+
 <style>
 :root{
   --e:#1b6e3a;--e-bg:#edf7f1;--e-mid:#4a9e6a;--e-border:#a8d5b8;
@@ -538,47 +517,38 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 </div>
 
 <script>
+// ── SUPABASE REST API (no CDN needed) ──
 const SURL = 'https://lsfpzisexsutsgeykvpw.supabase.co';
 const SKEY = 'sb_publishable_D_klwoKs16qZjzcI6FNIMg_P7OwmDgt';
-let sb = null;
 
-function initSB() {
-  try {
-    const lib = window.supabase || (window.Supabase && window.Supabase.createClient ? window.Supabase : null);
-    if (lib && lib.createClient) {
-      sb = lib.createClient(SURL, SKEY);
-      console.log('Supabase ready');
-      // Set up auth listener now that sb is ready
-      sb.auth.onAuthStateChange(async (event, session) => {
-        if (session && session.user) {
-          currentUser = session.user;
-          await loadSettings();
-          await loadLogs();
-          document.getElementById('authScreen').classList.remove('active');
-          if (S.setup) { showMain(); }
-          else { document.getElementById('setupScreen').classList.add('active'); }
-        } else {
-          currentUser = null;
-          document.getElementById('authScreen').classList.add('active');
-          document.getElementById('mainScreen').classList.remove('active');
-          document.getElementById('setupScreen').classList.remove('active');
-        }
-      });
-      return true;
-    }
-  } catch(e) { console.error('SB init error:', e); }
-  return false;
+// Simple session storage
+let _session = null;
+try { const s = localStorage.getItem('rrx_session'); if(s) _session = JSON.parse(s); } catch(e){}
+
+function sbHeaders(extra={}) {
+  const h = { 'Content-Type': 'application/json', 'apikey': SKEY, 'Prefer': 'return=representation' };
+  if (_session && _session.access_token) h['Authorization'] = 'Bearer ' + _session.access_token;
+  return Object.assign(h, extra);
 }
 
-// Try to init immediately, or wait for script load
-if (!initSB()) {
-  window._sbCallback = initSB;
-  // Poll as fallback
-  let attempts = 0;
-  const poll = setInterval(() => {
-    attempts++;
-    if (initSB() || attempts > 50) clearInterval(poll);
-  }, 200);
+async function sbAuth(path, body) {
+  const r = await fetch(SURL + '/auth/v1/' + path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': SKEY },
+    body: JSON.stringify(body)
+  });
+  return r.json();
+}
+
+async function sbFrom(table, method, body, query='') {
+  const r = await fetch(SURL + '/rest/v1/' + table + query, {
+    method: method,
+    headers: sbHeaders({ 'Prefer': method==='POST' ? 'resolution=merge-duplicates,return=representation' : 'return=representation' }),
+    body: body ? JSON.stringify(body) : undefined
+  });
+  if (!r.ok) { const e = await r.text(); console.error('DB error:', e); return { data: null, error: e }; }
+  const data = await r.json();
+  return { data: Array.isArray(data) ? data : [data], error: null };
 }
 
 const FM = [
@@ -607,7 +577,7 @@ function showSaving(){const el=document.getElementById('savingInd');el.classList
 async function saveSettings(){
   if(!currentUser)return;
   showSaving();
-  await sb.from('user_settings').upsert({
+  await sbFrom('user_settings','POST',{
     user_id:currentUser.id,
     cal_type:S.calType,
     day1:S.day1?new Date(S.day1).toISOString().split('T')[0]:null,
@@ -616,19 +586,20 @@ async function saveSettings(){
     e_adj:S.eAdj,
     p_adj:S.pAdj,
     updated_at:new Date().toISOString()
-  },{onConflict:'user_id'});
+  });
 }
 
 async function loadSettings(){
   if(!currentUser)return;
-  const{data}=await sb.from('user_settings').select('*').eq('user_id',currentUser.id).single();
-  if(data){
-    S.calType=data.cal_type||'lunar';
-    S.day1=data.day1?new Date(data.day1):null;
-    S.eLevel=data.e_level||0;
-    S.pLevel=data.p_level||0;
-    S.eAdj=data.e_adj||null;
-    S.pAdj=data.p_adj||null;
+  const{data}=await sbFrom('user_settings','GET',null,'?user_id=eq.'+currentUser.id+'&limit=1');
+  if(data&&data[0]){
+    const r=data[0];
+    S.calType=r.cal_type||'lunar';
+    S.day1=r.day1?new Date(r.day1):null;
+    S.eLevel=r.e_level||0;
+    S.pLevel=r.p_level||0;
+    S.eAdj=r.e_adj||null;
+    S.pAdj=r.p_adj||null;
     S.setup=true;
   }
 }
@@ -638,7 +609,7 @@ async function saveLog(dateKey,logData){
   showSaving();
   const[y,m,d]=dateKey.split('-').map(Number);
   const logDate=new Date(y,m,d).toISOString().split('T')[0];
-  await sb.from('daily_logs').upsert({
+  await sbFrom('daily_logs','POST',{
     user_id:currentUser.id,
     log_date:logDate,
     symptoms:logData.symptoms||[],
@@ -646,12 +617,12 @@ async function saveLog(dateKey,logData){
     bleeding:logData.bleeding||0,
     dose_log:logData.doseLog||{eAM:false,ePM:false,pAM:false,pPM:false},
     updated_at:new Date().toISOString()
-  },{onConflict:'user_id,log_date'});
+  });
 }
 
 async function loadLogs(){
   if(!currentUser)return;
-  const{data}=await sb.from('daily_logs').select('*').eq('user_id',currentUser.id);
+  const{data}=await sbFrom('daily_logs','GET',null,'?user_id=eq.'+currentUser.id);
   if(data){
     data.forEach(row=>{
       const d=new Date(row.log_date);
@@ -674,9 +645,20 @@ async function doSignIn(){
   const pw=document.getElementById('siPw').value;
   const err=document.getElementById('siErr');
   err.textContent='Signing in...';
-  const{error}=await sb.auth.signInWithPassword({email,password:pw});
-  if(error){err.textContent=error.message;}
-  else{err.textContent='';}
+  const data=await sbAuth('token?grant_type=password',{email,password:pw});
+  if(data.error||data.error_description){
+    err.textContent=data.error_description||data.error||'Sign in failed.';
+  } else {
+    _session={access_token:data.access_token,refresh_token:data.refresh_token,user:data.user};
+    try{localStorage.setItem('rrx_session',JSON.stringify(_session));}catch(e){}
+    currentUser=data.user;
+    err.textContent='';
+    await loadSettings();
+    await loadLogs();
+    document.getElementById('authScreen').classList.remove('active');
+    if(S.setup){showMain();}
+    else{document.getElementById('setupScreen').classList.add('active');}
+  }
 }
 
 async function doSignUp(){
@@ -687,23 +669,41 @@ async function doSignUp(){
   if(pw!==pw2){msg.textContent='Passwords do not match.';msg.className='auth-msg err';return;}
   if(pw.length<6){msg.textContent='Password must be at least 6 characters.';msg.className='auth-msg err';return;}
   msg.textContent='Creating account...';
-  const{error}=await sb.auth.signUp({email,password:pw});
-  if(error){msg.textContent=error.message;msg.className='auth-msg err';}
-  else{msg.textContent='Account created! Check your email to confirm, then sign in.';msg.className='auth-msg ok';}
+  const data=await sbAuth('signup',{email,password:pw});
+  if(data.error||data.error_description){
+    msg.textContent=data.error_description||data.error||'Sign up failed.';
+    msg.className='auth-msg err';
+  } else {
+    // Auto sign in after signup
+    const data2=await sbAuth('token?grant_type=password',{email,password:pw});
+    if(data2.access_token){
+      _session={access_token:data2.access_token,refresh_token:data2.refresh_token,user:data2.user};
+      try{localStorage.setItem('rrx_session',JSON.stringify(_session));}catch(e){}
+      currentUser=data2.user;
+      document.getElementById('authScreen').classList.remove('active');
+      document.getElementById('setupScreen').classList.add('active');
+    } else {
+      msg.textContent='Account created! Please sign in.';
+      msg.className='auth-msg ok';
+      switchAuth('signin');
+    }
+  }
 }
 
 async function doReset(){
   const email=document.getElementById('siEmail').value.trim();
   if(!email){document.getElementById('siErr').textContent='Enter your email first.';return;}
-  await sb.auth.resetPasswordForEmail(email);
+  await sbAuth('recover',{email});
   document.getElementById('siErr').textContent='Reset link sent — check your email.';
   document.getElementById('siErr').style.color='var(--e)';
 }
 
 async function doSignOut(){
-  await sb.auth.signOut();
+  _session=null;
+  try{localStorage.removeItem('rrx_session');}catch(e){}
   closeOL('settingsOL');
-  currentUser=null;S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,eAdj:null,pAdj:null};
+  currentUser=null;
+  S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,eAdj:null,pAdj:null};
   LOGS={};
   document.getElementById('mainScreen').classList.remove('active');
   document.getElementById('authScreen').classList.add('active');
@@ -1042,24 +1042,7 @@ function openOL(id){document.getElementById(id).classList.add('vis');}
 function closeOL(id){document.getElementById(id).classList.remove('vis');}
 function bgClose(e,id){if(e.target.classList.contains('overlay'))closeOL(id);}
 
-// ── INIT ──
-window.addEventListener('load', function() {
-sb.auth.onAuthStateChange(async (event,session)=>{
-  if(session&&session.user){
-    currentUser=session.user;
-    await loadSettings();
-    await loadLogs();
-    document.getElementById('authScreen').classList.remove('active');
-    if(S.setup){showMain();}
-    else{document.getElementById('setupScreen').classList.add('active');}
-  } else {
-    currentUser=null;
-    document.getElementById('authScreen').classList.add('active');
-    document.getElementById('mainScreen').classList.remove('active');
-    document.getElementById('setupScreen').classList.remove('active');
-  }
-});
-}); // end window.addEventListener load
+// ── INIT ── handled above
 </script>
 </body>
 </html>
