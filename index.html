@@ -825,7 +825,7 @@ async function togDose(field,key){
 
 function renderBleeding(vd,key){
   const val=(LOGS[key]&&LOGS[key].bleeding!==undefined)?LOGS[key].bleeding:0;
-  document.getElementById('bleedScale').innerHTML=[0,1,2,3,4,5].map(v=>'<button class="bleed-opt'+(val===v?' on':'')+'" data-v="'+v+'" onclick="setBleeding('+v+',''+key+'')">'+( v===0?'None':v)+'</button>').join('');
+  document.getElementById('bleedScale').innerHTML=[0,1,2,3,4,5].map(v=>'<button class="bleed-opt'+(val===v?' on':'')+'" data-v="'+v+'" onclick="setBleeding('+v+',&quot;'+key+'&quot;)">'+( v===0?'None':v)+'</button>').join('');
   document.getElementById('setDay1Btn').classList.toggle('vis',val>0);
 }
 
