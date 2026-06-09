@@ -29,7 +29,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .brand-tag{font-size:13px;color:var(--text-light);margin-top:4px;letter-spacing:.04em}
 .auth-card{background:white;border-radius:var(--radius);box-shadow:var(--shadow-lg);padding:28px 24px}
 .auth-tabs{display:flex;margin-bottom:22px;border-bottom:2px solid var(--border)}
-.auth-tab{flex:1;padding:10px;font-family:"DM Sans",sans-serif;font-size:14px;font-weight:600;color:var(--text-light);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s}
+.auth-tab{flex:1;padding:14px 10px;font-family:"DM Sans",sans-serif;font-size:14px;font-weight:600;color:var(--text-light);background:none;border:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;transition:all .15s;text-align:center;user-select:none;-webkit-user-select:none}
 .auth-tab.on{color:var(--e);border-bottom-color:var(--e)}
 .auth-field{margin-bottom:14px}
 .auth-field label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--text-light);display:block;margin-bottom:6px}
@@ -225,8 +225,8 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
     </div>
     <div class="auth-card">
       <div class="auth-tabs">
-        <button class="auth-tab on" id="tabSI" onclick="switchAuth('signin')" ontouchstart="switchAuth('signin')">Sign In</button>
-        <button class="auth-tab" id="tabSU" onclick="switchAuth('signup')" ontouchstart="switchAuth('signup')">Create Account</button>
+        <div class="auth-tab on" id="tabSI" onclick="switchAuth('signin')">Sign In</div>
+        <div class="auth-tab" id="tabSU" onclick="switchAuth('signup')">Create Account</div>
       </div>
       <div id="panelSI">
         <div class="auth-field"><label>Email</label><input type="email" id="siEmail" placeholder="your@email.com" autocomplete="email"></div>
