@@ -224,25 +224,28 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       <div class="brand-tag">Cyclical Hormone Protocol Tracker</div>
     </div>
     <div class="auth-card">
-      <div class="auth-tabs">
-        <div class="auth-tab on" id="tabSI" onclick="switchAuth('signin')">Sign In</div>
-        <div class="auth-tab" id="tabSU" onclick="switchAuth('signup')">Create Account</div>
-      </div>
       <div id="panelSI">
         <div class="auth-field"><label>Email</label><input type="email" id="siEmail" placeholder="your@email.com" autocomplete="email"></div>
-        <div class="auth-field"><label>Password</label><input type="password" id="siPw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doSignIn()"></div>
-        <button class="start-btn" onclick="doSignIn()">Sign In</button>
+        <div class="auth-field"><label>Password</label><input type="password" id="siPw" placeholder="••••••••" autocomplete="current-password"></div>
+        <button class="start-btn" style="margin-bottom:10px" onclick="doSignIn()">Sign In</button>
         <div class="auth-msg err" id="siErr"></div>
-        <div class="auth-footer" style="margin-top:12px">
-          <a href="#" onclick="doReset()" style="color:var(--e);font-size:12px">Forgot password?</a>
+        <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--text-light)">
+          Don't have an account? <span style="color:var(--e);font-weight:600;cursor:pointer" onclick="switchAuth('signup')">Create one</span>
+        </div>
+        <div style="text-align:center;margin-top:8px">
+          <span style="color:var(--e);font-size:12px;cursor:pointer" onclick="doReset()">Forgot password?</span>
         </div>
       </div>
       <div id="panelSU" style="display:none">
+        <div style="font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;margin-bottom:18px;color:var(--text)">Create Account</div>
         <div class="auth-field"><label>Email</label><input type="email" id="suEmail" placeholder="your@email.com" autocomplete="email"></div>
         <div class="auth-field"><label>Password</label><input type="password" id="suPw" placeholder="At least 6 characters" autocomplete="new-password"></div>
-        <div class="auth-field"><label>Confirm Password</label><input type="password" id="suPw2" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignUp()"></div>
-        <button class="start-btn" onclick="doSignUp()">Create Account</button>
+        <div class="auth-field"><label>Confirm Password</label><input type="password" id="suPw2" placeholder="••••••••"></div>
+        <button class="start-btn" style="margin-bottom:10px" onclick="doSignUp()">Create Account</button>
         <div class="auth-msg" id="suMsg"></div>
+        <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--text-light)">
+          Already have an account? <span style="color:var(--e);font-weight:600;cursor:pointer" onclick="switchAuth('signin')">Sign in</span>
+        </div>
       </div>
     </div>
   </div>
