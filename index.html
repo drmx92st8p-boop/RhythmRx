@@ -229,12 +229,8 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="auth-field"><label>Password</label><input type="password" id="siPw" placeholder="••••••••" autocomplete="current-password"></div>
         <button class="start-btn" style="margin-bottom:10px" onclick="doSignIn()">Sign In</button>
         <div class="auth-msg err" id="siErr"></div>
-        <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--text-light)">
-          Don't have an account? <span style="color:var(--e);font-weight:600;cursor:pointer" onclick="switchAuth('signup')">Create one</span>
-        </div>
-        <div style="text-align:center;margin-top:8px">
-          <span style="color:var(--e);font-size:12px;cursor:pointer" onclick="doReset()">Forgot password?</span>
-        </div>
+        <button onclick="switchAuth('signup')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Create Account</button>
+        <button onclick="doReset()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-light);cursor:pointer">Forgot password?</button>
       </div>
       <div id="panelSU" style="display:none">
         <div style="font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;margin-bottom:18px;color:var(--text)">Create Account</div>
@@ -243,9 +239,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="auth-field"><label>Confirm Password</label><input type="password" id="suPw2" placeholder="••••••••"></div>
         <button class="start-btn" style="margin-bottom:10px" onclick="doSignUp()">Create Account</button>
         <div class="auth-msg" id="suMsg"></div>
-        <div style="text-align:center;margin-top:14px;font-size:13px;color:var(--text-light)">
-          Already have an account? <span style="color:var(--e);font-weight:600;cursor:pointer" onclick="switchAuth('signin')">Sign in</span>
-        </div>
+        <button onclick="switchAuth('signin')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Back to Sign In</button>
       </div>
     </div>
   </div>
