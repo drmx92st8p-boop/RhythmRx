@@ -47,6 +47,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .pill{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);font-size:14px;font-weight:500;cursor:pointer;background:white;color:var(--text-mid);transition:all .15s;user-select:none}
 .pill.e-pill.on{background:var(--e-bg);border-color:var(--e);color:var(--e)}
 .pill.p-pill.on{background:var(--p-bg);border-color:var(--p);color:var(--p)}
+.pill.t-pill.on{background:var(--t-bg);border-color:var(--t);color:var(--t)}
 .pill.cal-pill.on{background:#e8f2fb;border-color:#2a6496;color:#2a6496}
 .setup-input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:10px;font-family:"DM Sans",sans-serif;font-size:15px;color:var(--text);outline:none;background:white;margin-top:8px}
 .setup-input:focus{border-color:var(--e)}
@@ -86,6 +87,14 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .dose-card{border-radius:var(--radius);padding:18px 20px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--shadow)}
 .dose-card.ec{background:var(--e-bg);border:2px solid var(--e-border)}
 .dose-card.pc{background:var(--p-bg);border:2px solid var(--p-border)}
+.dose-card.tc{background:var(--t-bg);border:2px solid var(--t-border)}
+.tc .dose-hormone{color:var(--t)}
+.tc .dose-level{color:var(--t-mid)}
+.tc .dose-num{color:var(--t)}
+.tc .dose-unit{color:var(--t-mid)}
+.ampm-btn.am-t{border-color:var(--t-border);color:var(--t)}
+.ampm-btn.pm-t{border-color:var(--t-border);color:var(--t)}
+.ampm-btn.done.am-t,.ampm-btn.done.pm-t{background:var(--t);color:white;border-color:var(--t)}
 .dose-hormone{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em}
 .ec .dose-hormone{color:var(--e)}
 .pc .dose-hormone{color:var(--p)}
@@ -227,19 +236,19 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       <div id="panelSI">
         <div class="auth-field"><label>Email</label><input type="email" id="siEmail" placeholder="your@email.com" autocomplete="email"></div>
         <div class="auth-field"><label>Password</label><input type="password" id="siPw" placeholder="••••••••" autocomplete="current-password"></div>
-        <button class="start-btn" style="margin-bottom:10px" onclick="doSignIn()">Sign In</button>
+        <button class="start-btn" style="margin-bottom:10px" onclick="event.preventDefault();doSignIn()">Sign In</button>
         <div class="auth-msg err" id="siErr"></div>
-        <button onclick="switchAuth('signup')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Create Account</button>
-        <button onclick="doReset()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-light);cursor:pointer">Forgot password?</button>
+        <button onclick="event.preventDefault();switchAuth('signup')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Create Account</button>
+        <button onclick="event.preventDefault();doReset()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-light);cursor:pointer">Forgot password?</button>
       </div>
       <div id="panelSU" style="display:none">
         <div style="font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;margin-bottom:18px;color:var(--text)">Create Account</div>
         <div class="auth-field"><label>Email</label><input type="email" id="suEmail" placeholder="your@email.com" autocomplete="email"></div>
         <div class="auth-field"><label>Password</label><input type="password" id="suPw" placeholder="At least 6 characters" autocomplete="new-password"></div>
         <div class="auth-field"><label>Confirm Password</label><input type="password" id="suPw2" placeholder="••••••••"></div>
-        <button class="start-btn" style="margin-bottom:10px" onclick="doSignUp()">Create Account</button>
+        <button class="start-btn" style="margin-bottom:10px" onclick="event.preventDefault();doSignUp()">Create Account</button>
         <div class="auth-msg" id="suMsg"></div>
-        <button onclick="switchAuth('signin')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Back to Sign In</button>
+        <button onclick="event.preventDefault();switchAuth('signin')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Back to Sign In</button>
       </div>
     </div>
   </div>
@@ -285,6 +294,23 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="pill p-pill on" data-lv="0" onclick="selLv('p',this)">Base P</div>
         <div class="pill p-pill" data-lv="1" onclick="selLv('p',this)">P+1</div>
         <div class="pill p-pill" data-lv="2" onclick="selLv('p',this)">P+2</div>
+      </div>
+    </div>
+    <div class="setup-card">
+      <div class="sec-label" style="color:var(--t)">Testosterone (optional)</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <input type="checkbox" id="tToggle" onchange="togT(this)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--t)">
+        <label for="tToggle" style="font-size:14px;color:var(--text-mid);cursor:pointer">Add Testosterone to my protocol</label>
+      </div>
+      <div id="tLevelGroup" style="display:none">
+        <div class="pill-group" id="tGroup">
+          <div class="pill t-pill" data-lv="-2" onclick="selLv('t',this)">T−2</div>
+          <div class="pill t-pill" data-lv="-1" onclick="selLv('t',this)">T−1</div>
+          <div class="pill t-pill on" data-lv="0" onclick="selLv('t',this)">Base T</div>
+          <div class="pill t-pill" data-lv="1" onclick="selLv('t',this)">T+1</div>
+          <div class="pill t-pill" data-lv="2" onclick="selLv('t',this)">T+2</div>
+          <div class="pill t-pill" data-lv="3" onclick="selLv('t',this)">T+3</div>
+        </div>
       </div>
     </div>
     <button class="start-btn" onclick="startApp()">Start Tracking</button>
@@ -366,12 +392,10 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       <button class="sym-btn" data-s="joint_pain" onclick="togSym(this)">Joint Pain</button>
       <button class="sym-btn" data-s="nausea" onclick="togSym(this)">Nausea</button>
       <button class="sym-btn" data-s="night_sweats" onclick="togSym(this)">Night Sweats</button>
-      <button class="sym-btn" data-s="sad" onclick="togSym(this)">Sad</button>
       <button class="sym-btn" data-s="sore_breasts" onclick="togSym(this)">Sore Breasts</button>
       <button class="sym-btn" data-s="spotting" onclick="togSym(this)">Spotting</button>
       <button class="sym-btn" data-s="teary" onclick="togSym(this)">Teary</button>
       <button class="sym-btn" data-s="tingling" onclick="togSym(this)">Tingling</button>
-      <button class="sym-btn" data-s="tired" onclick="togSym(this)">Tired</button>
       <div class="libido-row">
         <button class="sym-btn" data-s="libido_low" onclick="togSym(this)">Libido Low</button>
         <button class="sym-btn" data-s="libido_high" onclick="togSym(this)">Libido High</button>
@@ -419,6 +443,9 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       <div class="field-pair">
         <div class="field"><label>E Syringes</label><input type="number" id="eSyringes" placeholder="e.g. 30" min="1"></div>
         <div class="field"><label>P Syringes</label><input type="number" id="pSyringes" placeholder="e.g. 20" min="0"></div>
+      </div>
+      <div id="tSupplyField" style="display:none;margin-bottom:12px">
+        <div class="field"><label style="color:var(--t)">T Syringes</label><input type="number" id="tSyringes" placeholder="e.g. 10" min="0"></div>
       </div>
       <div class="field" style="margin-bottom:12px"><label>Starting From</label><input type="date" id="supplyStart"></div>
       <button class="full-btn eb" onclick="calcSupply()">Calculate</button>
@@ -505,6 +532,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
     <div class="sh-title">Settings</div>
     <div class="set-row"><div><div class="set-lbl">Calendar</div><div class="set-sub" id="setCalLbl"></div></div><button class="sm-btn" onclick="goSetup()">Change</button></div>
     <div class="set-row"><div><div class="set-lbl">Estradiol</div><div class="set-sub" id="setELbl"></div></div></div>
+    <div class="set-row" id="setTRow" style="display:none"><div><div class="set-lbl" style="color:var(--t)">Testosterone</div><div class="set-sub" id="setTLbl"></div></div></div>
     <div class="set-row"><div><div class="set-lbl">Progesterone</div><div class="set-sub" id="setPLbl"></div></div></div>
     <div class="set-row"><div><div class="set-lbl">Dose Adjustments</div><div class="set-sub" id="setAdjLbl">None active</div></div><button class="sm-btn" onclick="resetAdj()">Reset</button></div>
     <div class="set-row"><div><div class="set-lbl">Account</div><div class="set-sub" id="setEmail"></div></div><button class="sm-btn" onclick="doSignOut()">Sign Out</button></div>
@@ -560,8 +588,10 @@ const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
 const DW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const EC={6:6,7:6,8:6,9:7,10:7,11:7,12:8,13:2,14:2,15:3,16:3,17:3};
 const PC={14:4,15:4,16:8,17:8,18:10,19:10,20:12,21:14,22:12,23:10,24:10,25:8,26:8,27:4,28:4};
+// T curve: days 1-12=1, 13=2, 14=3, 15=4, 16=3, 17=2, 18-28=1
+const TC={13:2,14:3,15:4,16:3,17:2};
 
-let S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,eAdj:null,pAdj:null};
+let S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,tEnabled:false,tLevel:0,eAdj:null,pAdj:null};
 let LOGS={};
 let currentUser=null;
 let offset=0,adjE=0,adjP=0,reportFmt='std';
@@ -580,6 +610,8 @@ async function saveSettings(){
     day1:S.day1?new Date(S.day1).toISOString().split('T')[0]:null,
     e_level:S.eLevel,
     p_level:S.pLevel,
+    t_enabled:S.tEnabled||false,
+    t_level:S.tLevel||0,
     e_adj:S.eAdj,
     p_adj:S.pAdj,
     updated_at:new Date().toISOString()
@@ -597,6 +629,8 @@ async function loadSettings(){
     S.pLevel=r.p_level||0;
     S.eAdj=r.e_adj||null;
     S.pAdj=r.p_adj||null;
+    S.tEnabled=r.t_enabled||false;
+    S.tLevel=r.t_level||0;
     S.setup=true;
   }
 }
@@ -612,7 +646,7 @@ async function saveLog(dateKey,logData){
     symptoms:logData.symptoms||[],
     notes:logData.notes||'',
     bleeding:logData.bleeding||0,
-    dose_log:logData.doseLog||{eAM:false,ePM:false,pAM:false,pPM:false},
+    dose_log:logData.doseLog||{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false},
     updated_at:new Date().toISOString()
   });
 }
@@ -624,7 +658,7 @@ async function loadLogs(){
     data.forEach(row=>{
       const d=new Date(row.log_date);
       const key=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
-      LOGS[key]={symptoms:row.symptoms||[],notes:row.notes||'',bleeding:row.bleeding||0,doseLog:row.dose_log||{eAM:false,ePM:false,pAM:false,pPM:false}};
+      LOGS[key]={symptoms:row.symptoms||[],notes:row.notes||'',bleeding:row.bleeding||0,doseLog:row.dose_log||{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
     });
   }
 }
@@ -742,20 +776,34 @@ function getDoses(d){
   if(S.pAdj&&t>=new Date(S.pAdj.fromMs).getTime())pL=S.pAdj.level;
   const eBase=EC[cycleDay]!==undefined?EC[cycleDay]:4;
   const pBase=PC[cycleDay]!==undefined?PC[cycleDay]:0;
-  return{...info,eDose:Math.max(0,eBase+eL),pDose:pBase>0?Math.max(0,pBase+pL):0};
+  const tL=S.tLevel||0;
+  const tBase=TC[cycleDay]!==undefined?TC[cycleDay]:1;
+  const tDose=S.tEnabled?Math.max(0,tBase+tL):0;
+  return{...info,eDose:Math.max(0,eBase+eL),pDose:pBase>0?Math.max(0,pBase+pL):0,tDose};
 }
 function lvLbl(t,lv){if(lv===0)return'Base '+t.toUpperCase();return t.toUpperCase()+(lv>0?'+':'')+lv;}
+function togT(cb){
+  document.getElementById('tLevelGroup').style.display=cb.checked?'block':'none';
+  sT_enabled=cb.checked;
+}
 
 // ── SETUP ──
-let sC=null,sE=0,sP=0;
+let sC=null,sE=0,sP=0,sT_enabled=false,sT=0;
 function selCal(el){document.querySelectorAll('.cal-pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');sC=el.dataset.cal;document.getElementById('day1Sec').style.display=sC==='28day'?'block':'none';}
-function selLv(t,el){const g=t==='e'?'#eGroup':'#pGroup';document.querySelectorAll(g+' .pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');if(t==='e')sE=parseInt(el.dataset.lv);else sP=parseInt(el.dataset.lv);}
+function selLv(t,el){
+  const g=t==='e'?'#eGroup':t==='p'?'#pGroup':'#tGroup';
+  document.querySelectorAll(g+' .pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+  if(t==='e')sE=parseInt(el.dataset.lv);
+  else if(t==='p')sP=parseInt(el.dataset.lv);
+  else sT=parseInt(el.dataset.lv);
+}
 async function startApp(){
   const err=document.getElementById('setupErr');
   if(!sC){err.textContent='Please choose a calendar type.';return;}
   if(sC==='28day'){const v=document.getElementById('day1Input').value;if(!v){err.textContent='Please enter your Day 1 date.';return;}const[y,m,d]=v.split('-').map(Number);S.day1=new Date(y,m-1,d).toISOString();}
   else{S.day1=null;}
-  S.calType=sC;S.eLevel=sE;S.pLevel=sP;S.setup=true;
+  S.calType=sC;S.eLevel=sE;S.pLevel=sP;S.tEnabled=sT_enabled;S.tLevel=sT;S.setup=true;
   await saveSettings();showMain();
 }
 function goSetup(){
@@ -765,7 +813,10 @@ function goSetup(){
   if(S.calType){document.querySelectorAll('.cal-pill').forEach(p=>{p.classList.toggle('on',p.dataset.cal===S.calType);});sC=S.calType;document.getElementById('day1Sec').style.display=S.calType==='28day'?'block':'none';}
   document.querySelectorAll('#eGroup .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===S.eLevel));
   document.querySelectorAll('#pGroup .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===S.pLevel));
-  sE=S.eLevel;sP=S.pLevel;
+  sE=S.eLevel;sP=S.pLevel;sT=S.tLevel||0;sT_enabled=S.tEnabled||false;
+  const tCb=document.getElementById('tToggle');
+  if(tCb){tCb.checked=sT_enabled;document.getElementById('tLevelGroup').style.display=sT_enabled?'block':'none';}
+  document.querySelectorAll('#tGroup .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===(S.tLevel||0)));
 }
 function showMain(){
   document.getElementById('setupScreen').classList.remove('active');
@@ -790,6 +841,7 @@ function render(){
   if(info){
     da.innerHTML='<div class="dose-card ec"><div><div class="dose-hormone">Estradiol</div><div class="dose-level">'+lvLbl('e',S.eLevel)+'</div></div><div style="text-align:right"><div class="dose-num">'+info.eDose+'</div><div class="dose-unit">LINES</div></div></div>';
     if(info.pDose>0)da.innerHTML+='<div class="dose-card pc"><div><div class="dose-hormone">Progesterone</div><div class="dose-level">'+lvLbl('p',S.pLevel)+'</div></div><div style="text-align:right"><div class="dose-num">'+info.pDose+'</div><div class="dose-unit">LINES</div></div></div>';
+    if(info.tDose>0)da.innerHTML+='<div class="dose-card tc"><div><div class="dose-hormone">Testosterone</div><div class="dose-level">'+lvLbl('t',S.tLevel)+'</div></div><div style="text-align:right"><div class="dose-num">'+info.tDose+'</div><div class="dose-unit">LINES</div></div></div>';
   }
   renderAMPM(info,vd,key);renderBleeding(vd,key);
   const nm=document.getElementById('nextMoon');
@@ -811,11 +863,15 @@ function renderAMPM(info,vd,key){
     h+='<button class="ampm-btn am-p'+(log.pAM?' done':'')+'" onclick="togDose(&quot;pAM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Progest.</span><span class="ampm-time">AM</span><span class="ampm-check">✓ AM</span></button>' +
        '<button class="ampm-btn pm-p'+(log.pPM?' done':'')+'" onclick="togDose(&quot;pPM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Progest.</span><span class="ampm-time">PM</span><span class="ampm-check">✓ PM</span></button>';
   }
+  if(info.tDose>0){
+    h+='<button class="ampm-btn am-t'+(log.tAM?' done':'')+'" onclick="togDose(&quot;tAM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Testost.</span><span class="ampm-time">AM</span><span class="ampm-check">✓ AM</span></button>' +
+       '<button class="ampm-btn pm-t'+(log.tPM?' done':'')+'" onclick="togDose(&quot;tPM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Testost.</span><span class="ampm-time">PM</span><span class="ampm-check">✓ PM</span></button>';
+  }
   aa.innerHTML=h+'</div>';
 }
 
 async function togDose(field,key){
-  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
   if(!LOGS[key].doseLog)LOGS[key].doseLog={eAM:false,ePM:false,pAM:false,pPM:false};
   LOGS[key].doseLog[field]=!LOGS[key].doseLog[field];
   await saveLog(key,LOGS[key]);
@@ -830,7 +886,7 @@ function renderBleeding(vd,key){
 }
 
 async function setBleeding(v,key){
-  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
   LOGS[key].bleeding=v;
   await saveLog(key,LOGS[key]);
   const vd=new Date(tod());vd.setDate(vd.getDate()+offset);
@@ -861,7 +917,7 @@ function openSymptoms(){
 function togSym(el){el.classList.toggle('on');}
 async function saveSymptoms(){
   const vd=new Date(tod());vd.setDate(vd.getDate()+offset);const key=dk(vd);
-  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
   LOGS[key].symptoms=[...document.querySelectorAll('.sym-btn.on')].map(b=>b.dataset.s);
   await saveLog(key,LOGS[key]);
   document.getElementById('symMsg').textContent='✓ Saved';document.getElementById('symMsg').className='ok';
@@ -877,7 +933,7 @@ function openNotes(){
 }
 async function saveNotes(){
   const vd=new Date(tod());vd.setDate(vd.getDate()+offset);const key=dk(vd);
-  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false}};
+  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
   LOGS[key].notes=document.getElementById('notesTA').value;
   await saveLog(key,LOGS[key]);
   document.getElementById('notesMsg').textContent='✓ Saved';document.getElementById('notesMsg').className='ok';
@@ -899,11 +955,13 @@ function calcTravel(){
   const[dy,dm,dd]=dv.split('-').map(Number),[ry,rm,rd]=rv.split('-').map(Number);
   const dep=new Date(dy,dm-1,dd),ret=new Date(ry,rm-1,rd);
   if(ret<dep){errEl.textContent='Return must be after departure.';return;}
-  let tE=0,tP=0,cur=new Date(dep);
-  while(cur<=ret){const i=getDoses(cur);if(i){tE+=i.eDose;tP+=i.pDose;}cur.setDate(cur.getDate()+1);}
+  let tE=0,tP=0,tT=0,cur=new Date(dep);
+  while(cur<=ret){const i=getDoses(cur);if(i){tE+=i.eDose;tP+=i.pDose;tT+=i.tDose||0;}cur.setDate(cur.getDate()+1);}
   const nd=Math.round((ret-dep)/86400000)+1;
   document.getElementById('travelTtl').textContent=MOS[dep.getMonth()]+' '+dep.getDate()+' – '+MOS[ret.getMonth()]+' '+ret.getDate()+' · '+nd+' day'+(nd!==1?'s':'');
-  document.getElementById('travelRows').innerHTML='<div class="calc-row"><span class="calc-hl e">Estradiol</span><span class="calc-math">'+tE+' lines ÷ 30</span><span class="calc-val" style="color:var(--e)">'+(tE/30).toFixed(1)+' syringes</span></div><div class="calc-row"><span class="calc-hl p">Progesterone</span><span class="calc-math">'+(tP>0?tP+' lines ÷ 30':'—')+'</span><span class="calc-val" style="color:var(--p)">'+(tP>0?(tP/30).toFixed(1)+' syringes':'none needed')+'</span></div>';
+  let tRows='<div class="calc-row"><span class="calc-hl e">Estradiol</span><span class="calc-math">'+tE+' lines ÷ 30</span><span class="calc-val" style="color:var(--e)">'+(tE/30).toFixed(1)+' syringes</span></div><div class="calc-row"><span class="calc-hl p">Progesterone</span><span class="calc-math">'+(tP>0?tP+' lines ÷ 30':'—')+'</span><span class="calc-val" style="color:var(--p)">'+(tP>0?(tP/30).toFixed(1)+' syringes':'none needed')+'</span></div>';
+  if(S.tEnabled&&tT>0)tRows+='<div class="calc-row"><span class="calc-hl" style="color:var(--t)">Testosterone</span><span class="calc-math">'+tT+' lines ÷ 30</span><span class="calc-val" style="color:var(--t)">'+(tT/30).toFixed(1)+' syringes</span></div>';
+  document.getElementById('travelRows').innerHTML=tRows;
   res.classList.add('vis');
 }
 function calcSupply(){
@@ -916,14 +974,16 @@ function calcSupply(){
   if(eS<=0&&pS<=0){errEl.textContent='Please enter at least one syringe count.';return;}
   const[sy,sm,sd]=sv.split('-').map(Number);
   const start=new Date(sy,sm-1,sd);
-  let eLines=eS*30,pLines=pS*30,eEnd=null,pEnd=null,cur=new Date(start);
+  const tSval=S.tEnabled?parseInt(document.getElementById('tSyringes')?document.getElementById('tSyringes').value:0)||0:0;
+  let eLines=eS*30,pLines=pS*30,tLines=tSval*30,eEnd=null,pEnd=null,tEnd=null,cur=new Date(start);
   for(let i=0;i<730;i++){
     const info=getDoses(cur);
     if(info){
       if(eEnd===null){eLines-=info.eDose;if(eLines<=0)eEnd=new Date(cur);}
       if(pEnd===null&&pS>0){pLines-=info.pDose;if(pLines<=0)pEnd=new Date(cur);}
+      if(tEnd===null&&tSval>0){tLines-=(info.tDose||0);if(tLines<=0)tEnd=new Date(cur);}
     }
-    if((eEnd||eS===0)&&(pEnd||pS===0))break;
+    if((eEnd||eS===0)&&(pEnd||pS===0)&&(tEnd||tSval===0))break;
     cur.setDate(cur.getDate()+1);
   }
   const fmt=d=>d?MO[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear():'beyond forecast';
@@ -932,6 +992,7 @@ function calcSupply(){
   let rows='';
   if(eS>0)rows+='<div class="calc-row"><span class="calc-hl e">Estradiol ('+eS+' syringes)</span><span class="calc-val" style="color:var(--e);font-size:14px;font-family:DM Sans">'+fmt(eEnd)+'<br><small style="color:var(--text-light)">'+days(eEnd)+'</small></span></div>';
   if(pS>0)rows+='<div class="calc-row"><span class="calc-hl p">Progesterone ('+pS+' syringes)</span><span class="calc-val" style="color:var(--p);font-size:14px;font-family:DM Sans">'+fmt(pEnd)+'<br><small style="color:var(--text-light)">'+days(pEnd)+'</small></span></div>';
+  if(tSval>0)rows+='<div class="calc-row"><span class="calc-hl" style="color:var(--t)">Testosterone ('+tSval+' syringes)</span><span class="calc-val" style="color:var(--t);font-size:14px;font-family:DM Sans">'+fmt(tEnd)+'<br><small style="color:var(--text-light)">'+days(tEnd)+'</small></span></div>';
   document.getElementById('supplyRows').innerHTML=rows;
   res.classList.add('vis');
 }
@@ -1029,6 +1090,12 @@ function updSettings(){
   document.getElementById('setCalLbl').textContent=S.calType==='lunar'?'🌕 Lunar Calendar':'📅 28-Day Calendar';
   document.getElementById('setELbl').textContent=lvLbl('e',S.eLevel);
   document.getElementById('setPLbl').textContent=lvLbl('p',S.pLevel);
+  const tRow=document.getElementById('setTRow');
+  if(tRow){tRow.style.display=S.tEnabled?'flex':'none';}
+  const tLbl=document.getElementById('setTLbl');
+  if(tLbl&&S.tEnabled)tLbl.textContent=lvLbl('t',S.tLevel||0);
+  const tSupply=document.getElementById('tSupplyField');
+  if(tSupply)tSupply.style.display=S.tEnabled?'block':'none';
   const adjEl=document.getElementById('setAdjLbl');
   if(adjEl)adjEl.textContent=(S.eAdj||S.pAdj)?'Active — tap Reset to clear':'None active';
   if(currentUser)document.getElementById('setEmail').textContent=currentUser.email;
