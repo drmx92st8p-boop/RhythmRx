@@ -236,19 +236,19 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       <div id="panelSI">
         <div class="auth-field"><label>Email</label><input type="email" id="siEmail" placeholder="your@email.com" autocomplete="email"></div>
         <div class="auth-field"><label>Password</label><input type="password" id="siPw" placeholder="••••••••" autocomplete="current-password"></div>
-        <button class="start-btn" style="margin-bottom:10px" onclick="event.preventDefault();doSignIn()">Sign In</button>
+        <button class="start-btn" id="btnSignIn" style="margin-bottom:10px">Sign In</button>
         <div class="auth-msg err" id="siErr"></div>
-        <button onclick="event.preventDefault();switchAuth('signup')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Create Account</button>
-        <button onclick="event.preventDefault();doReset()" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-light);cursor:pointer">Forgot password?</button>
+        <button id="btnGoSignUp" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Create Account</button>
+        <button id="btnForgot" style="width:100%;margin-top:8px;padding:10px;background:none;border:none;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text-light);cursor:pointer">Forgot password?</button>
       </div>
       <div id="panelSU" style="display:none">
         <div style="font-family:'DM Sans',sans-serif;font-size:16px;font-weight:600;margin-bottom:18px;color:var(--text)">Create Account</div>
         <div class="auth-field"><label>Email</label><input type="email" id="suEmail" placeholder="your@email.com" autocomplete="email"></div>
         <div class="auth-field"><label>Password</label><input type="password" id="suPw" placeholder="At least 6 characters" autocomplete="new-password"></div>
         <div class="auth-field"><label>Confirm Password</label><input type="password" id="suPw2" placeholder="••••••••"></div>
-        <button class="start-btn" style="margin-bottom:10px" onclick="event.preventDefault();doSignUp()">Create Account</button>
+        <button class="start-btn" id="btnSignUp" style="margin-bottom:10px">Create Account</button>
         <div class="auth-msg" id="suMsg"></div>
-        <button onclick="event.preventDefault();switchAuth('signin')" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Back to Sign In</button>
+        <button id="btnGoSignIn" style="width:100%;margin-top:10px;padding:12px;background:white;border:1.5px solid var(--e);border-radius:12px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:600;color:var(--e);cursor:pointer">Back to Sign In</button>
       </div>
     </div>
   </div>
@@ -304,8 +304,6 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       </div>
       <div id="tLevelGroup" style="display:none">
         <div class="pill-group" id="tGroup">
-          <div class="pill t-pill" data-lv="-2" onclick="selLv('t',this)">T−2</div>
-          <div class="pill t-pill" data-lv="-1" onclick="selLv('t',this)">T−1</div>
           <div class="pill t-pill on" data-lv="0" onclick="selLv('t',this)">Base T</div>
           <div class="pill t-pill" data-lv="1" onclick="selLv('t',this)">T+1</div>
           <div class="pill t-pill" data-lv="2" onclick="selLv('t',this)">T+2</div>
@@ -1107,6 +1105,22 @@ function closeOL(id){document.getElementById(id).classList.remove('vis');}
 function bgClose(e,id){if(e.target.classList.contains('overlay'))closeOL(id);}
 
 // ── INIT ── handled above
+
+// ── AUTH BUTTON LISTENERS ── attached via JS for iOS compatibility
+function attachAuthListeners() {
+  const btn = (id, fn) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('click', fn, false);
+    el.addEventListener('touchend', function(e){ e.preventDefault(); fn(); }, false);
+  };
+  btn('btnSignIn', doSignIn);
+  btn('btnSignUp', doSignUp);
+  btn('btnGoSignUp', () => switchAuth('signup'));
+  btn('btnGoSignIn', () => switchAuth('signin'));
+  btn('btnForgot', doReset);
+}
+document.addEventListener('DOMContentLoaded', attachAuthListeners);
 </script>
 </body>
 </html>
