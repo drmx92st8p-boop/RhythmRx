@@ -603,7 +603,7 @@ function showSaving(){const el=document.getElementById('savingInd');el.classList
 async function saveSettings(){
   if(!currentUser)return;
   showSaving();
-  await sbFrom('user_settings','POST',{
+  const payload={
     user_id:currentUser.id,
     cal_type:S.calType,
     day1:S.day1?new Date(S.day1).toISOString().split('T')[0]:null,
@@ -614,7 +614,19 @@ async function saveSettings(){
     e_adj:S.eAdj,
     p_adj:S.pAdj,
     updated_at:new Date().toISOString()
+  };
+  // Try PATCH first (update existing), fall back to POST (insert new)
+  const r=await fetch(SURL+'/rest/v1/user_settings?user_id=eq.'+currentUser.id,{
+    method:'PATCH',
+    headers:sbHeaders({'Prefer':'return=representation'}),
+    body:JSON.stringify(payload)
   });
+  if(r.ok){const d=await r.json();if(!d||d.length===0){
+    // No existing row, insert
+    await sbFrom('user_settings','POST',payload);
+  }} else {
+    console.error('saveSettings error:',await r.text());
+  }
 }
 
 async function loadSettings(){
@@ -639,7 +651,7 @@ async function saveLog(dateKey,logData){
   showSaving();
   const[y,m,d]=dateKey.split('-').map(Number);
   const logDate=new Date(y,m,d).toISOString().split('T')[0];
-  await sbFrom('daily_logs','POST',{
+  const payload={
     user_id:currentUser.id,
     log_date:logDate,
     symptoms:logData.symptoms||[],
@@ -647,7 +659,18 @@ async function saveLog(dateKey,logData){
     bleeding:logData.bleeding||0,
     dose_log:logData.doseLog||{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false},
     updated_at:new Date().toISOString()
+  };
+  // Try PATCH first, fall back to POST
+  const r=await fetch(SURL+'/rest/v1/daily_logs?user_id=eq.'+currentUser.id+'&log_date=eq.'+logDate,{
+    method:'PATCH',
+    headers:sbHeaders({'Prefer':'return=representation'}),
+    body:JSON.stringify(payload)
   });
+  if(r.ok){const d=await r.json();if(!d||d.length===0){
+    await sbFrom('daily_logs','POST',payload);
+  }} else {
+    console.error('saveLog error:',await r.text());
+  }
 }
 
 async function loadLogs(){
@@ -1103,7 +1126,30 @@ function openOL(id){document.getElementById(id).classList.add('vis');}
 function closeOL(id){document.getElementById(id).classList.remove('vis');}
 function bgClose(e,id){if(e.target.classList.contains('overlay'))closeOL(id);}
 
-// ── INIT ── handled above
+// ── INIT ── Restore session on load
+(async function(){
+  if(_session && _session.user && _session.access_token){
+    try {
+      const r = await fetch(SURL+'/auth/v1/user',{
+        headers:{'apikey':SKEY,'Authorization':'Bearer '+_session.access_token}
+      });
+      if(r.ok){
+        currentUser = await r.json();
+        _session.user = currentUser;
+        try{localStorage.setItem('rrx_session',JSON.stringify(_session));}catch(e){}
+        await loadSettings();
+        await loadLogs();
+        document.getElementById('authScreen').classList.remove('active');
+        if(S.setup){showMain();}
+        else{document.getElementById('setupScreen').classList.add('active');}
+        return;
+      }
+    } catch(e){ console.log('Session restore error:',e); }
+    // Session invalid
+    _session=null;
+    try{localStorage.removeItem('rrx_session');}catch(e){}
+  }
+})();
 
 // ── AUTH BUTTON LISTENERS ── attached via JS for iOS compatibility
 function attachAuthListeners() {
