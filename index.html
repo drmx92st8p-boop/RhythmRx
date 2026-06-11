@@ -615,18 +615,15 @@ async function saveSettings(){
     p_adj:S.pAdj,
     updated_at:new Date().toISOString()
   };
-  // Try PATCH first (update existing), fall back to POST (insert new)
-  const r=await fetch(SURL+'/rest/v1/user_settings?user_id=eq.'+currentUser.id,{
-    method:'PATCH',
-    headers:sbHeaders({'Prefer':'return=representation'}),
-    body:JSON.stringify(payload)
-  });
-  if(r.ok){const d=await r.json();if(!d||d.length===0){
-    // No existing row, insert
-    await sbFrom('user_settings','POST',payload);
-  }} else {
-    console.error('saveSettings error:',await r.text());
-  }
+  try {
+    const r=await fetch(SURL+'/rest/v1/user_settings',{
+      method:'POST',
+      headers:sbHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok){const e=await r.text();console.error('saveSettings error:',e);}
+    else{console.log('Settings saved ok');}
+  } catch(e){console.error('saveSettings exception:',e);}
 }
 
 async function loadSettings(){
@@ -660,17 +657,14 @@ async function saveLog(dateKey,logData){
     dose_log:logData.doseLog||{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false},
     updated_at:new Date().toISOString()
   };
-  // Try PATCH first, fall back to POST
-  const r=await fetch(SURL+'/rest/v1/daily_logs?user_id=eq.'+currentUser.id+'&log_date=eq.'+logDate,{
-    method:'PATCH',
-    headers:sbHeaders({'Prefer':'return=representation'}),
-    body:JSON.stringify(payload)
-  });
-  if(r.ok){const d=await r.json();if(!d||d.length===0){
-    await sbFrom('daily_logs','POST',payload);
-  }} else {
-    console.error('saveLog error:',await r.text());
-  }
+  try {
+    const r=await fetch(SURL+'/rest/v1/daily_logs',{
+      method:'POST',
+      headers:sbHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),
+      body:JSON.stringify(payload)
+    });
+    if(!r.ok){const e=await r.text();console.error('saveLog error:',e);}
+  } catch(e){console.error('saveLog exception:',e);}
 }
 
 async function loadLogs(){
