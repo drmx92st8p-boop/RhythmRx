@@ -664,8 +664,6 @@ async function loadLogs(){
 
 // ── AUTH ──
 function switchAuth(t){
-  document.getElementById('tabSI').classList.toggle('on',t==='signin');
-  document.getElementById('tabSU').classList.toggle('on',t==='signup');
   document.getElementById('panelSI').style.display=t==='signin'?'block':'none';
   document.getElementById('panelSU').style.display=t==='signup'?'block':'none';
 }
