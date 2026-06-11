@@ -11,6 +11,7 @@
 :root{
   --e:#1b6e3a;--e-bg:#edf7f1;--e-mid:#4a9e6a;--e-border:#a8d5b8;
   --p:#6b2d8b;--p-bg:#f5edf9;--p-mid:#9a60b5;--p-border:#cca0dc;
+  --t:#b35a00;--t-bg:#fff3e8;--t-mid:#d4722a;--t-border:#f0b080;
   --text:#0f0f0f;--text-mid:#3d3d3d;--text-light:#888;
   --border:#e2e2e2;--bg:#fff;--bg2:#f7f7f5;
   --radius:16px;--shadow:0 2px 16px rgba(0,0,0,0.07);--shadow-lg:0 8px 32px rgba(0,0,0,0.12);
@@ -1120,7 +1121,12 @@ function attachAuthListeners() {
   btn('btnGoSignIn', () => switchAuth('signin'));
   btn('btnForgot', doReset);
 }
-document.addEventListener('DOMContentLoaded', attachAuthListeners);
+// DOMContentLoaded may have already fired since script is at bottom of page
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', attachAuthListeners);
+} else {
+  attachAuthListeners();
+}
 </script>
 </body>
 </html>
