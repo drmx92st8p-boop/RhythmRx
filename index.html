@@ -616,7 +616,7 @@ async function saveSettings(){
     updated_at:new Date().toISOString()
   };
   try {
-    const r=await fetch(SURL+'/rest/v1/user_settings',{
+    const r=await fetch(SURL+'/rest/v1/user_settings?on_conflict=user_id',{
       method:'POST',
       headers:sbHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),
       body:JSON.stringify(payload)
@@ -658,7 +658,7 @@ async function saveLog(dateKey,logData){
     updated_at:new Date().toISOString()
   };
   try {
-    const r=await fetch(SURL+'/rest/v1/daily_logs',{
+    const r=await fetch(SURL+'/rest/v1/daily_logs?on_conflict=user_id,log_date',{
       method:'POST',
       headers:sbHeaders({'Prefer':'resolution=merge-duplicates,return=representation'}),
       body:JSON.stringify(payload)
