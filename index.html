@@ -647,7 +647,8 @@ async function saveLog(dateKey,logData){
   if(!currentUser)return;
   showSaving();
   const[y,m,d]=dateKey.split('-').map(Number);
-  const logDate=new Date(y,m,d).toISOString().split('T')[0];
+  // Build date string directly to avoid UTC offset issues
+  const logDate=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
   const payload={
     user_id:currentUser.id,
     log_date:logDate,
@@ -672,8 +673,9 @@ async function loadLogs(){
   const{data}=await sbFrom('daily_logs','GET',null,'?user_id=eq.'+currentUser.id);
   if(data){
     data.forEach(row=>{
-      const d=new Date(row.log_date);
-      const key=d.getFullYear()+'-'+d.getMonth()+'-'+d.getDate();
+      // Parse date as local to avoid UTC offset shifting the day
+      const parts=row.log_date.split('-');
+      const key=parseInt(parts[0])+'-'+(parseInt(parts[1])-1)+'-'+parseInt(parts[2]);
       LOGS[key]={symptoms:row.symptoms||[],notes:row.notes||'',bleeding:row.bleeding||0,doseLog:row.dose_log||{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
     });
   }
