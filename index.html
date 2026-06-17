@@ -156,9 +156,15 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .set-day1-btn{font-size:11px;font-weight:600;color:var(--e);background:var(--e-bg);border:1px solid var(--e-border);border-radius:10px;padding:4px 10px;cursor:pointer;display:none}
 .set-day1-btn.vis{display:block}
 .bleeding-scale{display:flex;gap:6px}
-.bleed-opt{flex:1;height:36px;border-radius:8px;border:1.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:14px;font-weight:600;cursor:pointer;background:white;color:var(--text-mid);transition:all .15s;display:flex;align-items:center;justify-content:center}
-.bleed-opt.on{background:#fde8e8;border-color:#e05555;color:#c0392b}
-.bleed-opt[data-v="0"].on{background:var(--bg2);border-color:var(--border);color:var(--text-light)}
+.bleed-opt{flex:1;height:42px;border-radius:8px;border:1.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:9px;font-weight:600;cursor:pointer;color:var(--text-mid);transition:all .15s;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.2;padding:2px}
+.bleed-opt[data-v="0"]{background:#ffffff}
+.bleed-opt[data-v="1"]{background:#fdeaea;color:#a83232}
+.bleed-opt[data-v="2"]{background:#f9c8c8;color:#8c2a2a}
+.bleed-opt[data-v="3"]{background:#f0908f;color:#5c1818}
+.bleed-opt[data-v="4"]{background:#e0524f;color:white}
+.bleed-opt[data-v="5"]{background:#b3201d;color:white}
+.bleed-opt.on{border-color:#5c1818;border-width:2.5px;font-weight:700}
+.bleed-opt[data-v="0"].on{border-color:var(--text-light)}
 
 /* NEXT MOON */
 .next-moon{background:white;border-radius:12px;padding:11px 16px;font-size:13px;color:var(--text-mid);text-align:center;margin-bottom:12px;border:1px solid var(--border)}
@@ -950,7 +956,7 @@ async function togDose(field,key){
 function renderBleeding(vd,key){
   const val=(LOGS[key]&&LOGS[key].bleeding!==undefined)?LOGS[key].bleeding:0;
   const bleedLabels=['None','Spotting','Light','Moderate','Heavy','Very Heavy'];
-  document.getElementById('bleedScale').innerHTML=[0,1,2,3,4,5].map(v=>'<button class="bleed-opt'+(val===v?' on':'')+'" data-v="'+v+'" onclick="setBleeding('+v+',&quot;'+key+'&quot;)"><span style="font-size:10px;display:block;font-weight:600">'+v+'</span><span style="font-size:9px;display:block;opacity:.7">'+bleedLabels[v]+'</span></button>').join('');
+  document.getElementById('bleedScale').innerHTML=[0,1,2,3,4,5].map(v=>'<button class="bleed-opt'+(val===v?' on':'')+'" data-v="'+v+'" onclick="setBleeding('+v+',&quot;'+key+'&quot;)">'+bleedLabels[v]+'</button>').join('');
   document.getElementById('setDay1Btn').classList.toggle('vis',val>0);
 }
 
