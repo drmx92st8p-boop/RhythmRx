@@ -1125,26 +1125,15 @@ function closeOL(id){document.getElementById(id).classList.remove('vis');}
 function bgClose(e,id){if(e.target.classList.contains('overlay'))closeOL(id);}
 
 // ── INIT ── Restore session on load (show app immediately, validate in background)
-(function(){
-  const dbg=document.createElement('div');
-  dbg.id='debugBanner';
-  dbg.style.cssText='position:fixed;top:0;left:0;right:0;background:#000;color:#0f0;font-size:11px;padding:6px;z-index:99999;font-family:monospace;max-height:120px;overflow:auto;';
-  document.body.appendChild(dbg);
-  window._dbg=function(msg){dbg.innerHTML+=msg+'<br>';};
-  _dbg('Boot: _session exists = '+!!(_session && _session.user && _session.access_token));
-})();
 (async function(){
   if(_session && _session.user && _session.access_token){
     // Show app immediately without waiting for network
     currentUser = _session.user;
-    _dbg('currentUser set: '+currentUser.id);
     await loadSettings();
-    _dbg('After loadSettings, S.setup = '+S.setup+', cal_type='+S.calType);
     await loadLogs();
-    _dbg('After loadLogs, LOGS keys = '+Object.keys(LOGS).length);
     document.getElementById('authScreen').classList.remove('active');
-    if(S.setup){showMain();_dbg('Called showMain()');}
-    else{document.getElementById('setupScreen').classList.add('active');_dbg('Showed setup screen - S.setup was falsy');}
+    if(S.setup){showMain();}
+    else{document.getElementById('setupScreen').classList.add('active');}
     // Validate session in background
     fetch(SURL+'/auth/v1/user',{
       headers:{'apikey':SKEY,'Authorization':'Bearer '+_session.access_token}
