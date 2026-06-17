@@ -66,6 +66,30 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .icon-btn{background:none;border:none;cursor:pointer;font-size:22px;color:var(--text-mid);padding:4px;line-height:1;border-radius:8px}
 .main-body{flex:1;padding:14px 14px 120px;max-width:480px;margin:0 auto;width:100%}
 
+/* REMINDER BANNER */
+.reminder-banner{background:linear-gradient(135deg,#fff3e0,#ffe8d6);border:1.5px solid #f0b87a;border-radius:var(--radius);padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:13px;color:#8a5a1f}
+.reminder-banner .ric{font-size:18px}
+.reminder-banner .rtx{flex:1;line-height:1.3}
+.reminder-banner button{background:#c0792a;color:white;border:none;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+
+/* MONTH CALENDAR */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:10px}
+.cal-dow{font-size:10px;font-weight:700;text-align:center;color:var(--text-light);text-transform:uppercase;padding-bottom:2px}
+.cal-cell{aspect-ratio:1;border-radius:8px;border:1px solid var(--border);background:white;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11px;cursor:pointer;position:relative;padding:2px}
+.cal-cell.empty{visibility:hidden;cursor:default}
+.cal-cell.today{border:2px solid var(--e);font-weight:700}
+.cal-cell .cc-day{font-size:13px;font-weight:600;color:var(--text)}
+.cal-cell .cc-cd{font-size:9px;color:var(--text-light)}
+.cal-cell .cc-bleed{position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:#e05555}
+.cal-cell.phase-follicular .cc-cd{color:var(--e)}
+.cal-cell.phase-ovulatory .cc-cd{color:#b35a00}
+.cal-cell.phase-luteal .cc-cd{color:var(--p)}
+.cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.cal-month-title{font-family:"Playfair Display",serif;font-size:18px}
+.cal-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px;font-size:11px;color:var(--text-mid)}
+.cal-legend span{display:inline-flex;align-items:center;gap:4px}
+.cal-legend .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
 /* DATE */
 .date-card{background:white;border-radius:var(--radius);box-shadow:var(--shadow);padding:16px 14px 14px;margin-bottom:12px}
 .date-nav-row{display:flex;align-items:center;gap:6px}
@@ -323,11 +347,17 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
   <div class="topbar">
     <div class="topbar-brand">Rhythm<span class="rx">Rx</span></div>
     <div class="topbar-right">
+      <button class="icon-btn" onclick="openCalendarView()">📅</button>
       <button class="icon-btn" onclick="openAdj()">⚙️</button>
       <button class="icon-btn" onclick="openOL('settingsOL')">☰</button>
     </div>
   </div>
   <div class="main-body">
+    <div class="reminder-banner" id="reminderBanner" style="display:none">
+      <span class="ric">🔔</span>
+      <span class="rtx" id="reminderText"></span>
+      <button onclick="openSymptoms();dismissReminder()">Log Now</button>
+    </div>
     <div class="date-card">
       <div class="date-nav-row">
         <button class="nav-btn" onclick="shiftDay(-1)">←</button>
@@ -483,6 +513,27 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
     <div id="reportMsg" class="ok" style="margin-top:10px"></div>
     <div class="disclaimer">This summary supports your provider conversation. It is not a medical record and does not constitute clinical advice.</div>
     <button class="full-btn gb" style="margin-top:16px" onclick="closeOL('reportOL')">← Back</button>
+  </div>
+</div>
+
+<!-- CALENDAR VIEW -->
+<div class="overlay" id="calendarOL" onclick="bgClose(event,'calendarOL')">
+  <div class="sheet">
+    <button class="sh-close" onclick="closeOL('calendarOL')">✕</button>
+    <div class="sh-title">Month View</div>
+    <div class="cal-month-nav">
+      <button class="nav-btn" onclick="calShiftMonth(-1)">←</button>
+      <div class="cal-month-title" id="calMonthTitle"></div>
+      <button class="nav-btn" onclick="calShiftMonth(1)">→</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <div class="cal-legend">
+      <span><span class="dot" style="background:var(--e)"></span>Follicular</span>
+      <span><span class="dot" style="background:#b35a00"></span>Ovulatory</span>
+      <span><span class="dot" style="background:var(--p)"></span>Luteal</span>
+      <span><span class="dot" style="background:#e05555"></span>Bleeding logged</span>
+    </div>
+    <button class="full-btn gb" style="margin-top:16px" onclick="closeOL('calendarOL')">← Back</button>
   </div>
 </div>
 
@@ -838,7 +889,7 @@ function goSetup(){
 function showMain(){
   document.getElementById('setupScreen').classList.remove('active');
   document.getElementById('mainScreen').classList.add('active');
-  updSettings();render();
+  updSettings();render();checkReminder();
 }
 
 // ── RENDER ──
@@ -922,6 +973,75 @@ async function setAsDay1(){
 
 function shiftDay(dir){offset+=dir;render();}
 function jumpToday(){offset=0;render();}
+
+// ── MONTH CALENDAR VIEW ──
+let calViewDate=null;
+function openCalendarView(){
+  const base=new Date(tod());base.setDate(base.getDate()+offset);
+  calViewDate=new Date(base.getFullYear(),base.getMonth(),1);
+  renderCalendarView();
+  openOL('calendarOL');
+}
+function calShiftMonth(dir){
+  calViewDate.setMonth(calViewDate.getMonth()+dir);
+  renderCalendarView();
+}
+function renderCalendarView(){
+  document.getElementById('calMonthTitle').textContent=MO[calViewDate.getMonth()]+' '+calViewDate.getFullYear();
+  const year=calViewDate.getFullYear(),month=calViewDate.getMonth();
+  const firstDow=new Date(year,month,1).getDay();
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const today=tod();
+  let html=DW.map(d=>'<div class="cal-dow">'+d.slice(0,3)+'</div>').join('');
+  for(let i=0;i<firstDow;i++)html+='<div class="cal-cell empty"></div>';
+  for(let day=1;day<=daysInMonth;day++){
+    const d=new Date(year,month,day);
+    const info=getDoses(d);
+    const key=dk(d);
+    const log=LOGS[key];
+    const isToday=d.getTime()===today.getTime();
+    const ph=info?phase(info.cycleDay):null;
+    const phCls=ph?ph.cls:'';
+    const bleedDot=(log&&log.bleeding>0)?'<span class="cc-bleed"></span>':'';
+    html+='<div class="cal-cell '+phCls+(isToday?' today':'')+'" onclick="calJumpTo('+day+','+month+','+year+')">'+bleedDot+
+      '<div class="cc-day">'+day+'</div>'+
+      (info?'<div class="cc-cd">D'+info.cycleDay+'</div>':'')+
+      '</div>';
+  }
+  document.getElementById('calGrid').innerHTML=html;
+}
+function calJumpTo(day,month,year){
+  const target=new Date(year,month,day);
+  const today=tod();
+  offset=Math.round((target.getTime()-today.getTime())/86400000);
+  render();
+  closeOL('calendarOL');
+}
+
+// ── DAY 12/23 REMINDER ──
+function checkReminder(){
+  const banner=document.getElementById('reminderBanner');
+  if(!S.setup){banner.style.display='none';return;}
+  const today=tod();
+  const info=getDoses(today);
+  if(!info){banner.style.display='none';return;}
+  const cd=info.cycleDay;
+  const dismissKey='rrx_reminder_dismissed_'+dk(today);
+  let dismissed=false;
+  try{dismissed=localStorage.getItem(dismissKey)==='1';}catch(e){}
+  if((cd===12||cd===23)&&!dismissed){
+    document.getElementById('reminderText').textContent='Day '+cd+' — a good day to log your symptoms for your provider.';
+    banner.style.display='flex';
+  } else {
+    banner.style.display='none';
+  }
+}
+function dismissReminder(){
+  const today=tod();
+  try{localStorage.setItem('rrx_reminder_dismissed_'+dk(today),'1');}catch(e){}
+  document.getElementById('reminderBanner').style.display='none';
+}
+
 
 // ── SYMPTOMS ──
 function openSymptoms(){
