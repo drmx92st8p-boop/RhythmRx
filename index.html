@@ -614,6 +614,19 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="pill p-pill" data-lv="5" onclick="selAdj('p',this)">P+5</div>
       </div>
     </div>
+    <div class="adj-sec" id="adjTSec">
+      <div class="adj-ttl" style="color:var(--t)">Testosterone</div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <input type="checkbox" id="adjTToggle" onchange="togAdjT(this)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--t)">
+        <label for="adjTToggle" style="font-size:14px;color:var(--text-mid);cursor:pointer">Include Testosterone</label>
+      </div>
+      <div class="pill-group" id="adjTG" style="display:none">
+        <div class="pill t-pill" data-lv="0" onclick="selAdj('t',this)">Base T</div>
+        <div class="pill t-pill" data-lv="1" onclick="selAdj('t',this)">T+1</div>
+        <div class="pill t-pill" data-lv="2" onclick="selAdj('t',this)">T+2</div>
+        <div class="pill t-pill" data-lv="3" onclick="selAdj('t',this)">T+3</div>
+      </div>
+    </div>
     <button class="full-btn eb" onclick="applyAdj()">Apply Changes</button>
     <div id="adjMsg"></div>
   </div>
@@ -738,6 +751,7 @@ async function saveSettings(){
     t_level:S.tLevel||0,
     e_adj:S.eAdj,
     p_adj:S.pAdj,
+    t_adj:S.tAdj||null,
     updated_at:new Date().toISOString()
   };
   try {
@@ -769,6 +783,7 @@ async function loadSettings(){
     S.pLevel=r.p_level||0;
     S.eAdj=r.e_adj||null;
     S.pAdj=r.p_adj||null;
+    S.tAdj=r.t_adj||null;
     S.tEnabled=r.t_enabled||false;
     S.tLevel=r.t_level||0;
     S.setup=true;
@@ -930,14 +945,14 @@ function phase(cd){
 function getDoses(d){
   const info=cycleInfo(d);if(!info)return null;
   const{cycleDay}=info,t=d.getTime();
-  let eL=S.eLevel,pL=S.pLevel;
+  let eL=S.eLevel,pL=S.pLevel,tEnabled=S.tEnabled||false,tL=S.tLevel||0;
   if(S.eAdj&&t>=new Date(S.eAdj.fromMs).getTime())eL=S.eAdj.level;
   if(S.pAdj&&t>=new Date(S.pAdj.fromMs).getTime())pL=S.pAdj.level;
+  if(S.tAdj&&t>=new Date(S.tAdj.fromMs).getTime()){tEnabled=S.tAdj.enabled;tL=S.tAdj.level;}
   const eBase=EC[cycleDay]!==undefined?EC[cycleDay]:4;
   const pBase=PC[cycleDay]!==undefined?PC[cycleDay]:0;
-  const tL=S.tLevel||0;
   const tBase=TC[cycleDay]!==undefined?TC[cycleDay]:1;
-  const tDose=S.tEnabled?Math.max(0,tBase+tL):0;
+  const tDose=tEnabled?Math.max(0,tBase+tL):0;
   return{...info,eDose:Math.max(0,eBase+eL),pDose:pBase>0?Math.max(0,pBase+pL):0,tDose};
 }
 function lvLbl(t,lv){if(lv===0)return'Base '+t.toUpperCase();return t.toUpperCase()+(lv>0?'+':'')+lv;}
@@ -1369,27 +1384,40 @@ function genReport(){
 }
 
 // ── ADJUST ──
+let adjT=0,adjTEnabled=false;
 function openAdj(){
-  adjE=S.eLevel;adjP=S.pLevel;
+  adjE=S.eLevel;adjP=S.pLevel;adjT=S.tLevel||0;adjTEnabled=S.tEnabled||false;
   document.querySelectorAll('#adjEG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjE));
   document.querySelectorAll('#adjPG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjP));
+  const tToggle=document.getElementById('adjTToggle');
+  if(tToggle){tToggle.checked=adjTEnabled;document.getElementById('adjTG').style.display=adjTEnabled?'flex':'none';}
+  document.querySelectorAll('#adjTG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjT));
   document.getElementById('adjMsg').textContent='';openOL('adjOL');
 }
+function togAdjT(cb){
+  adjTEnabled=cb.checked;
+  document.getElementById('adjTG').style.display=cb.checked?'flex':'none';
+}
 function selAdj(t,el){
-  const g=t==='e'?'#adjEG':'#adjPG';
+  const g=t==='e'?'#adjEG':t==='p'?'#adjPG':'#adjTG';
   document.querySelectorAll(g+' .pill').forEach(p=>p.classList.remove('on'));
   el.classList.add('on');
-  if(t==='e')adjE=parseInt(el.dataset.lv);else adjP=parseInt(el.dataset.lv);
+  if(t==='e')adjE=parseInt(el.dataset.lv);
+  else if(t==='p')adjP=parseInt(el.dataset.lv);
+  else adjT=parseInt(el.dataset.lv);
 }
 async function applyAdj(){
-  S.eLevel=adjE;S.eAdj={level:adjE,fromMs:new Date(0).toISOString()};
-  S.pLevel=adjP;S.pAdj={level:adjP,fromMs:new Date(0).toISOString()};
+  // Use today as the fromMs so prior days keep their original doses
+  const fromMs=tod().toISOString();
+  S.eLevel=adjE;S.eAdj={level:adjE,fromMs};
+  S.pLevel=adjP;S.pAdj={level:adjP,fromMs};
+  S.tEnabled=adjTEnabled;S.tLevel=adjT;S.tAdj={level:adjT,enabled:adjTEnabled,fromMs};
   await saveSettings();updSettings();
-  document.getElementById('adjMsg').textContent='✓ Applied';document.getElementById('adjMsg').className='ok';
+  document.getElementById('adjMsg').textContent='✓ Applied from today forward';document.getElementById('adjMsg').className='ok';
   setTimeout(()=>{closeOL('adjOL');render();},700);
 }
 async function resetAdj(){
-  S.eAdj=null;S.pAdj=null;
+  S.eAdj=null;S.pAdj=null;S.tAdj=null;
   await saveSettings();updSettings();render();closeOL('settingsOL');
 }
 
@@ -1405,7 +1433,7 @@ function updSettings(){
   const tSupply=document.getElementById('tSupplyField');
   if(tSupply)tSupply.style.display=S.tEnabled?'block':'none';
   const adjEl=document.getElementById('setAdjLbl');
-  if(adjEl)adjEl.textContent=(S.eAdj||S.pAdj)?'Active — tap Reset to clear':'None active';
+  if(adjEl)adjEl.textContent=(S.eAdj||S.pAdj||S.tAdj)?'Active — tap Reset to clear':'None active';
   if(currentUser)document.getElementById('setEmail').textContent=currentUser.email;
 }
 
