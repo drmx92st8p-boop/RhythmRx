@@ -1185,7 +1185,7 @@ function loadAlarmSettings(){
 
 function startAlarmChecker(){
   if(_alarmCheckInterval)clearInterval(_alarmCheckInterval);
-  _alarmCheckInterval=setInterval(checkAlarms,30000);
+  _alarmCheckInterval=setInterval(checkAlarms,10000);
   checkAlarms();
 }
 
@@ -1202,13 +1202,12 @@ function checkAlarms(){
     const isAM=s.amOn&&s.amTime===hhmm;
     const isPM=s.pmOn&&s.pmTime===hhmm;
     if(isAM||isPM){
-      showAlarm(isAM?'AM':'PM');
-      try{localStorage.setItem(dismissedKey,'1');}catch(e){}
+      showAlarm(isAM?'AM':'PM', dismissedKey);
     }
-  }catch(e){}
+  }catch(e){console.log('alarm check error:',e);}
 }
 
-function showAlarm(ampm){
+function showAlarm(ampm, dismissedKey){
   const info=getDoses(tod());
   if(!info)return;
   const el=document.getElementById('doseAlarm');
@@ -1218,15 +1217,17 @@ function showAlarm(ampm){
   if(info.pDose>0)html+=`<div class="alarm-dose-row"><div><div class="alarm-dose-name" style="color:var(--p)">Progesterone</div><div class="alarm-dose-unit">LINES</div></div><div class="alarm-dose-val" style="color:var(--p)">${info.pDose}</div></div>`;
   if(info.tDose>0)html+=`<div class="alarm-dose-row"><div><div class="alarm-dose-name" style="color:var(--t)">Testosterone</div><div class="alarm-dose-unit">LINES</div></div><div class="alarm-dose-val" style="color:var(--t)">${info.tDose}</div></div>`;
   document.getElementById('alarmDoses').innerHTML=html;
+  // Store dismissedKey on the element so dismissAlarm can mark it
+  el.dataset.dismissKey=dismissedKey||'';
   el.classList.add('vis');
-  // Auto-mark dose as taken
-  const key=dk(tod());
-  const field=ampm==='AM'?'eAM':'ePM';
-  if(!LOGS[key])LOGS[key]={symptoms:[],notes:'',bleeding:0,doseLog:{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
 }
 
 function dismissAlarm(){
-  document.getElementById('doseAlarm').classList.remove('vis');
+  const el=document.getElementById('doseAlarm');
+  if(el.dataset.dismissKey){
+    try{localStorage.setItem(el.dataset.dismissKey,'1');}catch(e){}
+  }
+  el.classList.remove('vis');
 }
 
 // ── SYMPTOMS ──
