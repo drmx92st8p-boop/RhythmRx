@@ -389,7 +389,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
     <div class="reminder-banner" id="reminderBanner" style="display:none">
       <span class="ric">🔔</span>
       <span class="rtx" id="reminderText"></span>
-      <button onclick="openSymptoms();dismissReminder()">Log Now</button>
+      <button id="reminderBtn">Log Now</button>
     </div>
     <div class="date-card">
       <div class="date-nav-row">
@@ -1133,18 +1133,24 @@ function checkReminder(){
   const today=tod();
   const info=getDoses(today);
   if(!info){banner.style.display='none';return;}
-  const dismissKey='rrx_reminder_dismissed_'+dk(today);
+  const cd=info.cycleDay;
+  // Key includes calendar date AND cycle day to avoid cross-cycle collisions
+  const dismissKey='rrx_rem2_'+dk(today)+'_cd'+cd;
   let dismissed=false;
   try{dismissed=localStorage.getItem(dismissKey)==='1';}catch(e){}
   if(dismissed){banner.style.display='none';return;}
-  // Show every 7 days (day 7, 14, 21, 28 of cycle) or on day 12/23
-  const cd=info.cycleDay;
-  const isPromptDay=(cd%7===0||cd===12||cd===23);
+  const isPromptDay=(cd===8||cd===12||cd===23||cd%7===0);
   if(isPromptDay){
-    const msg=cd===12?'Day 12 — peak estradiol. Log how you\'re feeling for your provider.':
-              cd===23?'Day 23 — mid-luteal check. Log your symptoms for your provider.':
-              'Weekly check-in — tap to log today\'s symptoms.';
+    let msg;
+    if(cd===8) msg='Day 8 — typically your lowest weight day. A good time to weigh in.';
+    else if(cd===12) msg='Day 12 — peak estradiol. Log how you\'re feeling for your provider.';
+    else if(cd===23) msg='Day 23 — mid-luteal check. Log your symptoms for your provider.';
+    else msg='Weekly check-in — tap to log today\'s symptoms.';
     document.getElementById('reminderText').textContent=msg;
+    // Day 8 uses a different button label since it's not about symptoms
+    const logBtn=document.getElementById('reminderBtn');
+    if(cd===8){logBtn.textContent='Got it';logBtn.onclick=function(){dismissReminder();};}
+    else{logBtn.textContent='Log Now';logBtn.onclick=function(){openSymptoms();dismissReminder();};}
     banner.style.display='flex';
   } else {
     banner.style.display='none';
@@ -1152,7 +1158,9 @@ function checkReminder(){
 }
 function dismissReminder(){
   const today=tod();
-  try{localStorage.setItem('rrx_reminder_dismissed_'+dk(today),'1');}catch(e){}
+  const info=getDoses(today);
+  const cd=info?info.cycleDay:0;
+  try{localStorage.setItem('rrx_rem2_'+dk(today)+'_cd'+cd,'1');}catch(e){}
   document.getElementById('reminderBanner').style.display='none';
 }
 
