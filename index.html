@@ -389,7 +389,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
     <div class="reminder-banner" id="reminderBanner" style="display:none">
       <span class="ric">🔔</span>
       <span class="rtx" id="reminderText"></span>
-      <button id="reminderBtn">Log Now</button>
+      <button onclick="openSymptoms();dismissReminder()">Log Now</button>
     </div>
     <div class="date-card">
       <div class="date-nav-row">
@@ -618,7 +618,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       <div class="adj-ttl" style="color:var(--t)">Testosterone</div>
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
         <input type="checkbox" id="adjTToggle" onchange="togAdjT(this)" style="width:20px;height:20px;cursor:pointer;accent-color:var(--t)">
-        <label for="adjTToggle" style="font-size:14px;color:var(--text-mid);cursor:pointer">Include Testosterone</label>
+        <label for="adjTToggle" style="font-size:14px;color:var(--text-mid);cursor:pointer">Add / adjust Testosterone</label>
       </div>
       <div class="pill-group" id="adjTG" style="display:none">
         <div class="pill t-pill" data-lv="0" onclick="selAdj('t',this)">Base T</div>
@@ -642,7 +642,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
     <div class="set-row"><div><div class="set-lbl">Estradiol</div><div class="set-sub" id="setELbl"></div></div></div>
     <div class="set-row" id="setTRow" style="display:none"><div><div class="set-lbl" style="color:var(--t)">Testosterone</div><div class="set-sub" id="setTLbl"></div></div></div>
     <div class="set-row"><div><div class="set-lbl">Progesterone</div><div class="set-sub" id="setPLbl"></div></div></div>
-    <div class="set-row"><div><div class="set-lbl">Dose Adjustments</div><div class="set-sub" id="setAdjLbl">None active</div></div><button class="sm-btn" onclick="resetAdj()">Reset</button></div>
+    <div class="set-row"><div><div class="set-lbl">Mid-Cycle Adjustments</div><div class="set-sub" id="setAdjLbl">None active — your setup levels apply</div></div><button class="sm-btn" onclick="resetAdj()">Clear</button></div>
     <div class="alarm-set-row"><div><div class="set-lbl">AM Dose Alarm</div><div class="set-sub">Full-screen reminder</div></div><div style="display:flex;align-items:center;gap:10px"><input type="time" id="alarmAMTime" class="alarm-time-input" value="08:00"><label class="alarm-toggle"><input type="checkbox" id="alarmAMOn" onchange="saveAlarmSettings()"><span class="alarm-slider"></span></label></div></div>
     <div class="alarm-set-row" style="border:none"><div><div class="set-lbl">PM Dose Alarm</div><div class="set-sub">Full-screen reminder</div></div><div style="display:flex;align-items:center;gap:10px"><input type="time" id="alarmPMTime" class="alarm-time-input" value="20:00"><label class="alarm-toggle"><input type="checkbox" id="alarmPMOn" onchange="saveAlarmSettings()"><span class="alarm-slider"></span></label></div></div>
     <div class="set-row"><div><div class="set-lbl">Account</div><div class="set-sub" id="setEmail"></div></div><button class="sm-btn" onclick="doSignOut()">Sign Out</button></div>
@@ -1133,24 +1133,18 @@ function checkReminder(){
   const today=tod();
   const info=getDoses(today);
   if(!info){banner.style.display='none';return;}
-  const cd=info.cycleDay;
-  // Key includes calendar date AND cycle day to avoid cross-cycle collisions
-  const dismissKey='rrx_rem2_'+dk(today)+'_cd'+cd;
+  const dismissKey='rrx_reminder_dismissed_'+dk(today);
   let dismissed=false;
   try{dismissed=localStorage.getItem(dismissKey)==='1';}catch(e){}
   if(dismissed){banner.style.display='none';return;}
-  const isPromptDay=(cd===8||cd===12||cd===23||cd%7===0);
+  // Show every 7 days (day 7, 14, 21, 28 of cycle) or on day 12/23
+  const cd=info.cycleDay;
+  const isPromptDay=(cd%7===0||cd===12||cd===23);
   if(isPromptDay){
-    let msg;
-    if(cd===8) msg='Day 8 — typically your lowest weight day. A good time to weigh in.';
-    else if(cd===12) msg='Day 12 — peak estradiol. Log how you\'re feeling for your provider.';
-    else if(cd===23) msg='Day 23 — mid-luteal check. Log your symptoms for your provider.';
-    else msg='Weekly check-in — tap to log today\'s symptoms.';
+    const msg=cd===12?'Day 12 — peak estradiol. Log how you\'re feeling for your provider.':
+              cd===23?'Day 23 — mid-luteal check. Log your symptoms for your provider.':
+              'Weekly check-in — tap to log today\'s symptoms.';
     document.getElementById('reminderText').textContent=msg;
-    // Day 8 uses a different button label since it's not about symptoms
-    const logBtn=document.getElementById('reminderBtn');
-    if(cd===8){logBtn.textContent='Got it';logBtn.onclick=function(){dismissReminder();};}
-    else{logBtn.textContent='Log Now';logBtn.onclick=function(){openSymptoms();dismissReminder();};}
     banner.style.display='flex';
   } else {
     banner.style.display='none';
@@ -1158,9 +1152,7 @@ function checkReminder(){
 }
 function dismissReminder(){
   const today=tod();
-  const info=getDoses(today);
-  const cd=info?info.cycleDay:0;
-  try{localStorage.setItem('rrx_rem2_'+dk(today)+'_cd'+cd,'1');}catch(e){}
+  try{localStorage.setItem('rrx_reminder_dismissed_'+dk(today),'1');}catch(e){}
   document.getElementById('reminderBanner').style.display='none';
 }
 
@@ -1434,14 +1426,16 @@ function updSettings(){
   document.getElementById('setCalLbl').textContent=S.calType==='lunar'?'🌕 Lunar Calendar':'📅 28-Day Calendar';
   document.getElementById('setELbl').textContent=lvLbl('e',S.eLevel);
   document.getElementById('setPLbl').textContent=lvLbl('p',S.pLevel);
+  const tEnabled=S.tAdj?S.tAdj.enabled:S.tEnabled;
+  const tLevel=S.tAdj?S.tAdj.level:(S.tLevel||0);
   const tRow=document.getElementById('setTRow');
-  if(tRow){tRow.style.display=S.tEnabled?'flex':'none';}
+  if(tRow){tRow.style.display=tEnabled?'flex':'none';}
   const tLbl=document.getElementById('setTLbl');
-  if(tLbl&&S.tEnabled)tLbl.textContent=lvLbl('t',S.tLevel||0);
+  if(tLbl&&tEnabled)tLbl.textContent=lvLbl('t',tLevel);
   const tSupply=document.getElementById('tSupplyField');
-  if(tSupply)tSupply.style.display=S.tEnabled?'block':'none';
+  if(tSupply)tSupply.style.display=tEnabled?'block':'none';
   const adjEl=document.getElementById('setAdjLbl');
-  if(adjEl)adjEl.textContent=(S.eAdj||S.pAdj||S.tAdj)?'Active — tap Reset to clear':'None active';
+  if(adjEl)adjEl.textContent=(S.eAdj||S.pAdj||S.tAdj)?'Active — tap Clear to revert to setup levels':'None active — your setup levels apply';
   if(currentUser)document.getElementById('setEmail').textContent=currentUser.email;
 }
 
