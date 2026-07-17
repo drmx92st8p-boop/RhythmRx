@@ -256,8 +256,8 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 
 <div class="saving-indicator" id="savingInd">Saving...</div>
 
-<!-- AUTH -->
-<div id="authScreen" class="screen active">
+<!-- AUTH: hidden by default; shown only if no session -->
+<div id="authScreen" class="screen" style="display:none">
   <div class="auth-wrap">
     <div class="brand-header">
       <div class="brand-name">Rhythm<span class="brand-rx">Rx</span></div>
@@ -325,6 +325,9 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="pill p-pill on" data-lv="0" onclick="selLv('p',this)">Base P</div>
         <div class="pill p-pill" data-lv="1" onclick="selLv('p',this)">P+1</div>
         <div class="pill p-pill" data-lv="2" onclick="selLv('p',this)">P+2</div>
+        <div class="pill p-pill" data-lv="3" onclick="selLv('p',this)">P+3</div>
+        <div class="pill p-pill" data-lv="4" onclick="selLv('p',this)">P+4</div>
+        <div class="pill p-pill" data-lv="5" onclick="selLv('p',this)">P+5</div>
       </div>
     </div>
     <div class="setup-card">
@@ -574,6 +577,9 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="pill p-pill" data-lv="0" onclick="selAdj('p',this)">Base P</div>
         <div class="pill p-pill" data-lv="1" onclick="selAdj('p',this)">P+1</div>
         <div class="pill p-pill" data-lv="2" onclick="selAdj('p',this)">P+2</div>
+        <div class="pill p-pill" data-lv="3" onclick="selAdj('p',this)">P+3</div>
+        <div class="pill p-pill" data-lv="4" onclick="selAdj('p',this)">P+4</div>
+        <div class="pill p-pill" data-lv="5" onclick="selAdj('p',this)">P+5</div>
       </div>
     </div>
     <button class="full-btn eb" onclick="applyAdj()">Apply Changes</button>
@@ -599,11 +605,10 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 </div>
 
 <script>
-// ── SUPABASE REST API (no CDN needed) ──
+// ── SUPABASE REST API ──
 const SURL = 'https://lsfpzisexsutsgeykvpw.supabase.co';
 const SKEY = 'sb_publishable_D_klwoKs16qZjzcI6FNIMg_P7OwmDgt';
 
-// Simple session storage
 let _session = null;
 try { const s = localStorage.getItem('rrx_session'); if(s) _session = JSON.parse(s); } catch(e){}
 
@@ -657,7 +662,6 @@ async function sbFrom(table, method, body, query='') {
       });
     }
   }
-
   if (!r.ok) { const e = await r.text(); console.error('DB error:', e); return { data: null, error: e }; }
   const data = await r.json();
   return { data: Array.isArray(data) ? data : [data], error: null };
@@ -675,7 +679,6 @@ const MOS=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
 const DW=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const EC={6:6,7:6,8:6,9:7,10:7,11:7,12:8,13:2,14:2,15:3,16:3,17:3};
 const PC={14:4,15:4,16:8,17:8,18:10,19:10,20:12,21:14,22:12,23:10,24:10,25:8,26:8,27:4,28:4};
-// T curve: days 1-12=1, 13=2, 14=3, 15=4, 16=3, 17=2, 18-28=1
 const TC={13:2,14:3,15:4,16:3,17:2};
 
 let S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,tEnabled:false,tLevel:0,eAdj:null,pAdj:null};
@@ -742,7 +745,6 @@ async function saveLog(dateKey,logData){
   if(!currentUser)return;
   showSaving();
   const[y,m,d]=dateKey.split('-').map(Number);
-  // Build date string directly to avoid UTC offset issues
   const logDate=y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
   const payload={
     user_id:currentUser.id,
@@ -775,7 +777,6 @@ async function loadLogs(){
   const{data}=await sbFrom('daily_logs','GET',null,'?user_id=eq.'+currentUser.id);
   if(data){
     data.forEach(row=>{
-      // Parse date as local to avoid UTC offset shifting the day
       const parts=row.log_date.split('-');
       const key=parseInt(parts[0])+'-'+(parseInt(parts[1])-1)+'-'+parseInt(parts[2]);
       LOGS[key]={symptoms:row.symptoms||[],notes:row.notes||'',bleeding:row.bleeding||0,doseLog:row.dose_log||{eAM:false,ePM:false,pAM:false,pPM:false,tAM:false,tPM:false}};
@@ -784,6 +785,11 @@ async function loadLogs(){
 }
 
 // ── AUTH ──
+function showAuthScreen(){
+  document.getElementById('authScreen').style.display='';
+  document.getElementById('authScreen').classList.add('active');
+}
+
 function switchAuth(t){
   document.getElementById('panelSI').style.display=t==='signin'?'block':'none';
   document.getElementById('panelSU').style.display=t==='signup'?'block':'none';
@@ -805,6 +811,7 @@ async function doSignIn(){
     await loadSettings();
     await loadLogs();
     document.getElementById('authScreen').classList.remove('active');
+    document.getElementById('authScreen').style.display='none';
     if(S.setup){showMain();}
     else{document.getElementById('setupScreen').classList.add('active');}
   }
@@ -823,13 +830,13 @@ async function doSignUp(){
     msg.textContent=data.error_description||data.error||'Sign up failed.';
     msg.className='auth-msg err';
   } else {
-    // Auto sign in after signup
     const data2=await sbAuth('token?grant_type=password',{email,password:pw});
     if(data2.access_token){
       _session={access_token:data2.access_token,refresh_token:data2.refresh_token,user:data2.user};
       try{localStorage.setItem('rrx_session',JSON.stringify(_session));}catch(e){}
       currentUser=data2.user;
       document.getElementById('authScreen').classList.remove('active');
+      document.getElementById('authScreen').style.display='none';
       document.getElementById('setupScreen').classList.add('active');
     } else {
       msg.textContent='Account created! Please sign in.';
@@ -855,7 +862,7 @@ async function doSignOut(){
   S={setup:false,calType:'lunar',day1:null,eLevel:0,pLevel:0,eAdj:null,pAdj:null};
   LOGS={};
   document.getElementById('mainScreen').classList.remove('active');
-  document.getElementById('authScreen').classList.add('active');
+  showAuthScreen();
 }
 
 // ── CYCLE ──
@@ -1068,7 +1075,7 @@ function calJumpTo(day,month,year){
   closeOL('calendarOL');
 }
 
-// ── DAY 12/23 REMINDER ──
+// ── REMINDER ──
 function checkReminder(){
   const banner=document.getElementById('reminderBanner');
   if(!S.setup){banner.style.display='none';return;}
@@ -1091,7 +1098,6 @@ function dismissReminder(){
   try{localStorage.setItem('rrx_reminder_dismissed_'+dk(today),'1');}catch(e){}
   document.getElementById('reminderBanner').style.display='none';
 }
-
 
 // ── SYMPTOMS ──
 function openSymptoms(){
@@ -1209,7 +1215,6 @@ function genReport(){
 
   let html='';
   if(reportFmt==='std'){
-    // Standard summary
     const symByDay={};
     rows.forEach(r=>{if(r.syms)r.syms.split(', ').forEach(s=>{if(!s)return;if(!symByDay[s])symByDay[s]=[];symByDay[s].push(r.day);});});
     let symSum='<p style="color:#777;font-size:13px">No symptoms logged.</p>';
@@ -1218,7 +1223,6 @@ function genReport(){
     const dRows=rows.filter(r=>r.syms||r.note||r.bleed>0).map(r=>'<tr style="border-bottom:1px solid #eee"><td style="padding:8px 10px;font-size:13px;white-space:nowrap">'+MOS[r.date.getMonth()]+' '+r.date.getDate()+'</td><td style="padding:8px 10px;font-size:13px;text-align:center">'+r.day+'</td><td style="padding:8px 10px;font-size:13px;color:#1b6e3a;text-align:center">'+r.e+'</td><td style="padding:8px 10px;font-size:13px;color:#6b2d8b;text-align:center">'+(r.p||'—')+'</td><td style="padding:8px 10px;font-size:13px;text-align:center">'+(r.bleed>0?r.bleed:'')+'</td><td style="padding:8px 10px;font-size:13px;color:#555">'+r.syms+'</td><td style="padding:8px 10px;font-size:13px;color:#777">'+r.note+'</td></tr>').join('');
     html='<!DOCTYPE html><html><head><meta charset="UTF-8"><style>body{font-family:Helvetica Neue,Arial,sans-serif;color:#111;padding:32px;max-width:800px;margin:0 auto}h1{font-size:24px;margin-bottom:4px}h2{font-size:16px;margin:24px 0 10px;border-bottom:2px solid #eee;padding-bottom:6px}.meta{font-size:13px;color:#777;margin-bottom:24px}.tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;font-weight:700;margin-right:8px}.et{background:#edf7f1;color:#1b6e3a}.pt{background:#f5edf9;color:#6b2d8b}.disclaimer{margin-top:32px;padding:12px;background:#f8f8f8;border-radius:8px;font-size:12px;color:#888;line-height:1.6}</style></head><body><h1>RhythmRx — Provider Summary</h1><div class="meta">Generated: '+MO[tod().getMonth()]+' '+tod().getDate()+', '+tod().getFullYear()+' &nbsp;·&nbsp; Period: '+MOS[startDate.getMonth()]+' '+startDate.getDate()+' – '+MOS[endDate.getMonth()]+' '+endDate.getDate()+' ('+months+' month'+(months!==1?'s':'')+')<br>Calendar: '+calLabel+' &nbsp;·&nbsp; <span class="tag et">'+lvLbl('e',S.eLevel)+'</span><span class="tag pt">'+lvLbl('p',S.pLevel)+'</span></div><h2>Symptom Summary</h2>'+symSum+(dRows?'<h2>Daily Log</h2><table style="width:100%;border-collapse:collapse"><thead><tr style="background:#f0f0f0"><th style="padding:8px 10px;text-align:left;font-size:12px">Date</th><th style="padding:8px 10px;font-size:12px">Day</th><th style="padding:8px 10px;font-size:12px;color:#1b6e3a">E</th><th style="padding:8px 10px;font-size:12px;color:#6b2d8b">P</th><th style="padding:8px 10px;font-size:12px">Bleeding</th><th style="padding:8px 10px;text-align:left;font-size:12px">Symptoms</th><th style="padding:8px 10px;text-align:left;font-size:12px">Notes</th></tr></thead><tbody>'+dRows+'</tbody></table>':'')+' <div class="disclaimer">Generated by RhythmRx. For informational purposes only. Not a medical record.</div></body></html>';
   } else {
-    // Inner Rhythm Health — Interim Symptom Update format
     const IRH_SYMS=['acne','angry','anxiety','bloating','brain_fog','constipation','cramps','depression','dizziness','dry_vagina','fatigue','feel_great','headache','heart_palp','hot_flash','incontinence','insomnia','irritable','itching','joint_pain','libido_low','libido_high','nausea','night_sweats','sore_breasts','spotting','teary','tingling'];
     const symByPhase={};
     rows.forEach(r=>{
@@ -1235,7 +1239,7 @@ function genReport(){
       const fCount=d.follicular.length,lCount=d.luteal.length;
       const fMark=fCount>0?'✓ ('+fCount+'x)':'';
       const lMark=lCount>0?'✓ ('+lCount+'x)':'';
-      const label=s.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase());
+      const label=s.replace(/_/g,' ').replace(/\w/g,c=>c.toUpperCase());
       return'<tr><td style="padding:6px 10px;font-size:13px">'+label+'</td><td style="padding:6px 10px;text-align:center;font-size:13px;color:#1b6e3a">'+fMark+'</td><td style="padding:6px 10px;text-align:center;font-size:13px;color:#6b2d8b">'+lMark+'</td><td style="padding:6px 10px;text-align:center;font-size:12px;color:#888">'+(fCount+lCount>0?(fCount>lCount?'Follicular':lCount>fCount?'Luteal':'Both'):'')+'</td></tr>';
     }).join('');
     const bleedRows=rows.filter(r=>r.bleed>0).map(r=>'<tr><td style="padding:6px 10px;font-size:13px">'+MOS[r.date.getMonth()]+' '+r.date.getDate()+'</td><td style="padding:6px 10px;font-size:13px;text-align:center">Day '+r.day+'</td><td style="padding:6px 10px;font-size:13px;text-align:center">'+r.bleed+'/5</td><td style="padding:6px 10px;font-size:13px;color:#777">'+r.note+'</td></tr>').join('');
@@ -1294,17 +1298,15 @@ function openOL(id){document.getElementById(id).classList.add('vis');}
 function closeOL(id){document.getElementById(id).classList.remove('vis');}
 function bgClose(e,id){if(e.target.classList.contains('overlay'))closeOL(id);}
 
-// ── INIT ── Restore session on load (show app immediately, validate in background)
+// ── INIT: restore session immediately, no flash ──
 (async function(){
   if(_session && _session.user && _session.access_token){
-    // Show app immediately without waiting for network
     currentUser = _session.user;
     await loadSettings();
     await loadLogs();
-    document.getElementById('authScreen').classList.remove('active');
     if(S.setup){showMain();}
     else{document.getElementById('setupScreen').classList.add('active');}
-    // Validate session in background; refresh token if expired
+    // Validate session in background
     fetch(SURL+'/auth/v1/user',{
       headers:{'apikey':SKEY,'Authorization':'Bearer '+_session.access_token}
     }).then(async r=>{
@@ -1313,7 +1315,6 @@ function bgClose(e,id){if(e.target.classList.contains('overlay'))closeOL(id);}
         currentUser=u;_session.user=u;
         try{localStorage.setItem('rrx_session',JSON.stringify(_session));}catch(e){}
       } else if(_session.refresh_token){
-        // Access token expired - try refresh token before signing out
         try{
           const rr=await fetch(SURL+'/auth/v1/token?grant_type=refresh_token',{
             method:'POST',
@@ -1325,35 +1326,31 @@ function bgClose(e,id){if(e.target.classList.contains('overlay'))closeOL(id);}
             _session={access_token:rd.access_token,refresh_token:rd.refresh_token,user:rd.user};
             currentUser=rd.user;
             try{localStorage.setItem('rrx_session',JSON.stringify(_session));}catch(e){}
-            await loadSettings();
-            await loadLogs();
-            if(S.setup){showMain();}
-          } else {
-            throw new Error('refresh failed');
-          }
+          } else { throw new Error('refresh failed'); }
         } catch(e){
-          // Refresh failed too - sign out
           _session=null;
           try{localStorage.removeItem('rrx_session');}catch(e){}
           currentUser=null;
           document.getElementById('mainScreen').classList.remove('active');
           document.getElementById('setupScreen').classList.remove('active');
-          document.getElementById('authScreen').classList.add('active');
+          showAuthScreen();
         }
       } else {
-        // No refresh token available - sign out
         _session=null;
         try{localStorage.removeItem('rrx_session');}catch(e){}
         currentUser=null;
         document.getElementById('mainScreen').classList.remove('active');
         document.getElementById('setupScreen').classList.remove('active');
-        document.getElementById('authScreen').classList.add('active');
+        showAuthScreen();
       }
-    }).catch(e=>console.log('Background session validation failed:',e));
+    }).catch(e=>console.log('Background session check failed:',e));
+  } else {
+    // No session — show auth screen
+    showAuthScreen();
   }
 })();
 
-// ── AUTH BUTTON LISTENERS ── attached via JS for iOS compatibility
+// ── AUTH BUTTON LISTENERS ──
 function attachAuthListeners() {
   const btn = (id, fn) => {
     const el = document.getElementById(id);
@@ -1367,7 +1364,6 @@ function attachAuthListeners() {
   btn('btnGoSignIn', () => switchAuth('signin'));
   btn('btnForgot', doReset);
 }
-// DOMContentLoaded may have already fired since script is at bottom of page
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', attachAuthListeners);
 } else {
