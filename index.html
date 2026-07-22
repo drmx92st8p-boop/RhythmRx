@@ -11,6 +11,7 @@
 :root{
   --e:#1b6e3a;--e-bg:#edf7f1;--e-mid:#4a9e6a;--e-border:#a8d5b8;
   --p:#6b2d8b;--p-bg:#f5edf9;--p-mid:#9a60b5;--p-border:#cca0dc;
+  --ov:#0891b2;--ov-bg:#e0f2fe;--ov-border:#7dd3fc;
   --t:#b35a00;--t-bg:#fff3e8;--t-mid:#d4722a;--t-border:#f0b080;
   --text:#0f0f0f;--text-mid:#3d3d3d;--text-light:#888;
   --border:#e2e2e2;--bg:#fff;--bg2:#f7f7f5;
@@ -82,7 +83,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .cal-cell .cc-cd{font-size:9px;color:var(--text-light)}
 .cal-cell .cc-bleed{position:absolute;top:2px;right:2px;width:6px;height:6px;border-radius:50%;background:#e05555}
 .cal-cell.phase-follicular .cc-cd{color:var(--e)}
-.cal-cell.phase-ovulatory .cc-cd{color:#e65c00}
+.cal-cell.phase-ovulatory .cc-cd{color:var(--ov)}
 .cal-cell.phase-luteal .cc-cd{color:var(--p)}
 .cal-month-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
 .cal-month-title{font-family:"Playfair Display",serif;font-size:18px}
@@ -100,7 +101,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .date-cycle{font-size:13px;color:var(--text-mid);margin-top:2px}
 .date-phase{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-top:4px;padding:3px 10px;border-radius:10px;display:inline-block}
 .phase-follicular{background:#e8f5ee;color:var(--e)}
-.phase-ovulatory{background:#fff3e0;color:#e65c00}
+.phase-ovulatory{background:var(--ov-bg);color:var(--ov)}
 .phase-luteal{background:var(--p-bg);color:var(--p)}
 .today-chip{display:inline-block;background:var(--e);color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;margin-left:6px;vertical-align:middle;position:relative;top:-1px}
 .back-btn{display:none;margin:0 auto 10px;padding:7px 16px;background:white;border:1.5px solid var(--border);border-radius:20px;font-family:"DM Sans",sans-serif;font-size:13px;font-weight:500;color:var(--text-mid);cursor:pointer}
@@ -195,7 +196,9 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .sym-save-bar{position:sticky;bottom:0;background:white;padding:12px 0 4px;margin-top:8px;border-top:1px solid var(--border)}
 
 /* NOTES */
-.notes-ta{width:100%;min-height:130px;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:"DM Sans",sans-serif;font-size:15px;color:var(--text);resize:none;outline:none;margin-bottom:14px}
+.freq-group{display:flex;gap:7px;margin-top:8px}
+.freq-pill{flex:1;padding:8px 6px;border-radius:10px;border:1.5px solid var(--border);font-family:"DM Sans",sans-serif;font-size:12px;font-weight:600;color:var(--text-mid);cursor:pointer;text-align:center;background:white;transition:all .15s}
+.freq-pill.on{background:var(--p-bg);border-color:var(--p);color:var(--p)}
 .notes-ta:focus{border-color:var(--e)}
 
 /* CALCULATORS */
@@ -319,10 +322,19 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
       <div class="pill-group">
         <div class="pill cal-pill" data-cal="lunar" onclick="selCal(this)">🌕 Lunar</div>
         <div class="pill cal-pill" data-cal="28day" onclick="selCal(this)">📅 28-Day</div>
+        <div class="pill cal-pill" data-cal="custom" onclick="selCal(this)">✏️ Custom Protocol</div>
       </div>
       <div id="day1Sec" style="display:none;margin-top:14px">
         <div class="sec-label">Your Day 1</div>
         <input type="date" id="day1Input" class="setup-input">
+      </div>
+      <div id="customDoseSec" style="display:none;margin-top:14px">
+        <div class="sec-label">Your Day 1</div>
+        <input type="date" id="customDay1Input" class="setup-input" style="margin-bottom:14px">
+        <div class="sec-label" style="color:var(--e)">Estradiol — enter lines per day (Days 1–28)</div>
+        <div id="customEGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:14px"></div>
+        <div class="sec-label" style="color:var(--p)">Progesterone — enter lines per day (Days 1–28)</div>
+        <div id="customPGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px"></div>
       </div>
     </div>
     <div class="setup-card">
@@ -352,6 +364,12 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="pill p-pill" data-lv="3" onclick="selLv('p',this)">P+3</div>
         <div class="pill p-pill" data-lv="4" onclick="selLv('p',this)">P+4</div>
         <div class="pill p-pill" data-lv="5" onclick="selLv('p',this)">P+5</div>
+      </div>
+      <div class="sec-label" style="margin-top:14px">Progesterone Frequency</div>
+      <div class="freq-group">
+        <div class="freq-pill on" data-freq="twice" onclick="selPFreq(this)">AM + PM</div>
+        <div class="freq-pill" data-freq="am" onclick="selPFreq(this)">AM only</div>
+        <div class="freq-pill" data-freq="pm" onclick="selPFreq(this)">PM only</div>
       </div>
     </div>
     <div class="setup-card">
@@ -572,7 +590,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
     <div class="cal-grid" id="calGrid"></div>
     <div class="cal-legend">
       <span><span class="dot" style="background:var(--e)"></span>Follicular</span>
-      <span><span class="dot" style="background:#e65c00"></span>Ovulatory</span>
+      <span><span class="dot" style="background:var(--ov)"></span>Ovulatory</span>
       <span><span class="dot" style="background:var(--p)"></span>Luteal</span>
       <span><span class="dot" style="background:#e05555"></span>Bleeding logged</span>
     </div>
@@ -614,6 +632,14 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <div class="pill p-pill" data-lv="3" onclick="selAdj('p',this)">P+3</div>
         <div class="pill p-pill" data-lv="4" onclick="selAdj('p',this)">P+4</div>
         <div class="pill p-pill" data-lv="5" onclick="selAdj('p',this)">P+5</div>
+      </div>
+      <div style="margin-top:10px">
+        <div class="sec-label" style="margin-bottom:6px">Progesterone Frequency</div>
+        <div class="freq-group" id="adjPFreqG">
+          <div class="freq-pill" data-freq="twice" onclick="selAdjPFreq(this)">AM + PM</div>
+          <div class="freq-pill" data-freq="am" onclick="selAdjPFreq(this)">AM only</div>
+          <div class="freq-pill" data-freq="pm" onclick="selAdjPFreq(this)">PM only</div>
+        </div>
       </div>
     </div>
     <div class="adj-sec" id="adjTSec">
@@ -754,6 +780,9 @@ async function saveSettings(){
     e_adj:S.eAdj,
     p_adj:S.pAdj,
     t_adj:S.tAdj||null,
+    p_freq:S.pFreq||'twice',
+    custom_e:S.customE||null,
+    custom_p:S.customP||null,
     updated_at:new Date().toISOString()
   };
   try {
@@ -786,6 +815,9 @@ async function loadSettings(){
     S.eAdj=r.e_adj||null;
     S.pAdj=r.p_adj||null;
     S.tAdj=r.t_adj||null;
+    S.pFreq=r.p_freq||'twice';
+    S.customE=r.custom_e||null;
+    S.customP=r.custom_p||null;
     S.tEnabled=r.t_enabled||false;
     S.tLevel=r.t_level||0;
     S.setup=true;
@@ -951,11 +983,20 @@ function getDoses(d){
   if(S.eAdj&&t>=new Date(S.eAdj.fromMs).getTime())eL=S.eAdj.level;
   if(S.pAdj&&t>=new Date(S.pAdj.fromMs).getTime())pL=S.pAdj.level;
   if(S.tAdj&&t>=new Date(S.tAdj.fromMs).getTime()){tEnabled=S.tAdj.enabled;tL=S.tAdj.level;}
-  const eBase=EC[cycleDay]!==undefined?EC[cycleDay]:4;
-  const pBase=PC[cycleDay]!==undefined?PC[cycleDay]:0;
+  let eDose,pDose;
+  if(S.calType==='custom'&&S.customE&&S.customP){
+    eDose=S.customE[cycleDay]||0;
+    pDose=S.customP[cycleDay]||0;
+  } else {
+    const eBase=EC[cycleDay]!==undefined?EC[cycleDay]:4;
+    const pBase=PC[cycleDay]!==undefined?PC[cycleDay]:0;
+    eDose=Math.max(0,eBase+eL);
+    pDose=pBase>0?Math.max(0,pBase+pL):0;
+  }
   const tBase=TC[cycleDay]!==undefined?TC[cycleDay]:1;
   const tDose=tEnabled?Math.max(0,tBase+tL):0;
-  return{...info,eDose:Math.max(0,eBase+eL),pDose:pBase>0?Math.max(0,pBase+pL):0,tDose};
+  const pFreq=S.pFreq||'twice';
+  return{...info,eDose,pDose,tDose,pFreq};
 }
 function lvLbl(t,lv){if(lv===0)return'Base '+t.toUpperCase();return t.toUpperCase()+(lv>0?'+':'')+lv;}
 function togT(cb){
@@ -965,7 +1006,14 @@ function togT(cb){
 
 // ── SETUP ──
 let sC=null,sE=0,sP=0,sT_enabled=false,sT=0;
-function selCal(el){document.querySelectorAll('.cal-pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');sC=el.dataset.cal;document.getElementById('day1Sec').style.display=sC==='28day'?'block':'none';}
+let sPFreq='twice';
+function selPFreq(el){document.querySelectorAll('.freq-pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');sPFreq=el.dataset.freq;}
+function selCal(el){
+  document.querySelectorAll('.cal-pill').forEach(p=>p.classList.remove('on'));el.classList.add('on');sC=el.dataset.cal;
+  document.getElementById('day1Sec').style.display=sC==='28day'?'block':'none';
+  document.getElementById('customDoseSec').style.display=sC==='custom'?'block':'none';
+  if(sC==='custom')buildCustomGrids();
+}
 function selLv(t,el){
   const g=t==='e'?'#eGroup':t==='p'?'#pGroup':'#tGroup';
   document.querySelectorAll(g+' .pill').forEach(p=>p.classList.remove('on'));
@@ -974,12 +1022,39 @@ function selLv(t,el){
   else if(t==='p')sP=parseInt(el.dataset.lv);
   else sT=parseInt(el.dataset.lv);
 }
+function buildCustomGrids(){
+  ['customEGrid','customPGrid'].forEach((id,i)=>{
+    const color=i===0?'var(--e)':'var(--p)';
+    let h='';
+    for(let d=1;d<=28;d++){
+      h+=`<div style="text-align:center"><div style="font-size:9px;color:var(--text-light);margin-bottom:2px">D${d}</div><input type="number" min="0" max="30" id="${id==='customEGrid'?'ce':'cp'}${d}" style="width:100%;padding:4px 2px;border:1.5px solid var(--border);border-radius:6px;font-size:12px;text-align:center;outline:none;color:${color}" placeholder="0"></div>`;
+    }
+    document.getElementById(id).innerHTML=h;
+  });
+}
+function getCustomDoses(prefix){
+  const doses={};
+  for(let d=1;d<=28;d++){
+    const el=document.getElementById(prefix+d);
+    doses[d]=el?parseInt(el.value)||0:0;
+  }
+  return doses;
+}
 async function startApp(){
   const err=document.getElementById('setupErr');
   if(!sC){err.textContent='Please choose a calendar type.';return;}
-  if(sC==='28day'){const v=document.getElementById('day1Input').value;if(!v){err.textContent='Please enter your Day 1 date.';return;}const[y,m,d]=v.split('-').map(Number);S.day1=new Date(y,m-1,d).toISOString();}
-  else{S.day1=null;}
-  S.calType=sC;S.eLevel=sE;S.pLevel=sP;S.tEnabled=sT_enabled;S.tLevel=sT;S.setup=true;
+  if(sC==='28day'){
+    const v=document.getElementById('day1Input').value;
+    if(!v){err.textContent='Please enter your Day 1 date.';return;}
+    const[y,m,d]=v.split('-').map(Number);S.day1=new Date(y,m-1,d).toISOString();
+  } else if(sC==='custom'){
+    const v=document.getElementById('customDay1Input').value;
+    if(!v){err.textContent='Please enter your Day 1 date.';return;}
+    const[y,m,d]=v.split('-').map(Number);S.day1=new Date(y,m-1,d).toISOString();
+    S.customE=getCustomDoses('ce');
+    S.customP=getCustomDoses('cp');
+  } else {S.day1=null;}
+  S.calType=sC;S.eLevel=sE;S.pLevel=sP;S.tEnabled=sT_enabled;S.tLevel=sT;S.pFreq=sPFreq;S.setup=true;
   await saveSettings();showMain();
 }
 function goSetup(){
@@ -1038,8 +1113,11 @@ function renderAMPM(info,vd,key){
     '<button class="ampm-btn am-e'+(log.eAM?' done':'')+'" onclick="togDose(&quot;eAM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Estradiol</span><span class="ampm-time">AM</span><span class="ampm-check">✓ AM</span></button>' +
     '<button class="ampm-btn pm-e'+(log.ePM?' done':'')+'" onclick="togDose(&quot;ePM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Estradiol</span><span class="ampm-time">PM</span><span class="ampm-check">✓ PM</span></button>';
   if(info.pDose>0){
-    h+='<button class="ampm-btn am-p'+(log.pAM?' done':'')+'" onclick="togDose(&quot;pAM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Progest.</span><span class="ampm-time">AM</span><span class="ampm-check">✓ AM</span></button>' +
-       '<button class="ampm-btn pm-p'+(log.pPM?' done':'')+'" onclick="togDose(&quot;pPM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Progest.</span><span class="ampm-time">PM</span><span class="ampm-check">✓ PM</span></button>';
+    const pFreq=info.pFreq||'twice';
+    const amDisabled=pFreq==='pm';
+    const pmDisabled=pFreq==='am';
+    h+='<button class="ampm-btn am-p'+(log.pAM?' done':'')+(amDisabled?' disabled-dose':'')+'" '+(amDisabled?'disabled style="opacity:.35;cursor:not-allowed"':'')+' onclick="'+(amDisabled?'':' togDose(&quot;pAM&quot;,&quot;'+key+'&quot;)')+'"><span class="ampm-label">Progest.</span><span class="ampm-time">'+(amDisabled?'N/A':'AM')+'</span><span class="ampm-check">✓ AM</span></button>'+
+       '<button class="ampm-btn pm-p'+(log.pPM?' done':'')+(pmDisabled?' disabled-dose':'')+'" '+(pmDisabled?'disabled style="opacity:.35;cursor:not-allowed"':'')+' onclick="'+(pmDisabled?'':' togDose(&quot;pPM&quot;,&quot;'+key+'&quot;)')+'"><span class="ampm-label">Progest.</span><span class="ampm-time">'+(pmDisabled?'N/A':'PM')+'</span><span class="ampm-check">✓ PM</span></button>';
   }
   if(info.tDose>0){
     h+='<button class="ampm-btn am-t'+(log.tAM?' done':'')+'" onclick="togDose(&quot;tAM&quot;,&quot;'+key+'&quot;)"><span class="ampm-label">Testost.</span><span class="ampm-time">AM</span><span class="ampm-check">✓ AM</span></button>' +
@@ -1393,11 +1471,16 @@ function genReport(){
 }
 
 // ── ADJUST ──
-let adjT=0,adjTEnabled=false;
+let adjT=0,adjTEnabled=false,adjPFreq='twice';
+function selAdjPFreq(el){
+  document.querySelectorAll('#adjPFreqG .freq-pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');adjPFreq=el.dataset.freq;
+}
 function openAdj(){
-  adjE=S.eLevel;adjP=S.pLevel;adjT=S.tLevel||0;adjTEnabled=S.tEnabled||false;
+  adjE=S.eLevel;adjP=S.pLevel;adjT=S.tLevel||0;adjTEnabled=S.tEnabled||false;adjPFreq=S.pFreq||'twice';
   document.querySelectorAll('#adjEG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjE));
   document.querySelectorAll('#adjPG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjP));
+  document.querySelectorAll('#adjPFreqG .freq-pill').forEach(p=>p.classList.toggle('on',p.dataset.freq===adjPFreq));
   const tToggle=document.getElementById('adjTToggle');
   if(tToggle){tToggle.checked=adjTEnabled;document.getElementById('adjTG').style.display=adjTEnabled?'flex':'none';}
   document.querySelectorAll('#adjTG .pill').forEach(p=>p.classList.toggle('on',parseInt(p.dataset.lv)===adjT));
@@ -1416,10 +1499,10 @@ function selAdj(t,el){
   else adjT=parseInt(el.dataset.lv);
 }
 async function applyAdj(){
-  // Use today as the fromMs so prior days keep their original doses
   const fromMs=tod().toISOString();
   S.eLevel=adjE;S.eAdj={level:adjE,fromMs};
   S.pLevel=adjP;S.pAdj={level:adjP,fromMs};
+  S.pFreq=adjPFreq;
   S.tEnabled=adjTEnabled;S.tLevel=adjT;S.tAdj={level:adjT,enabled:adjTEnabled,fromMs};
   await saveSettings();updSettings();
   document.getElementById('adjMsg').textContent='✓ Applied from today forward';document.getElementById('adjMsg').className='ok';
