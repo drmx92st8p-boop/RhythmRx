@@ -192,7 +192,7 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
 .sym-btn.on{border-color:var(--p);background:var(--p-bg);color:var(--p)}
 .sym-btn.feel-great.on{border-color:var(--e);background:var(--e-bg);color:var(--e)}
 .libido-row{grid-column:span 2;display:flex;gap:7px}
-.libido-row .sym-btn{flex:1}
+.sym-save-bar{position:sticky;bottom:0;background:white;padding:12px 0 4px;margin-top:8px;border-top:1px solid var(--border)}
 
 /* NOTES */
 .notes-ta{width:100%;min-height:130px;padding:12px;border:1.5px solid var(--border);border-radius:10px;font-family:"DM Sans",sans-serif;font-size:15px;color:var(--text);resize:none;outline:none;margin-bottom:14px}
@@ -471,8 +471,10 @@ html,body{height:100%;font-family:"DM Sans",sans-serif;background:var(--bg2);col
         <button class="sym-btn" data-s="libido_high" onclick="togSym(this)">Libido High</button>
       </div>
     </div>
-    <button class="full-btn pb" onclick="saveSymptoms()">Save Symptoms</button>
-    <div id="symMsg"></div>
+    <div class="sym-save-bar">
+      <button class="full-btn pb" onclick="saveSymptoms()">Save Symptoms</button>
+      <div id="symMsg"></div>
+    </div>
   </div>
 </div>
 
@@ -1340,7 +1342,13 @@ function genReport(){
     const log=LOGS[key]||{};
     const syms=(log.symptoms||[]).map(s=>s.replace(/_/g,' ')).join(', ');
     const note=log.notes||'',bleed=log.bleeding||0;
-    if(info)rows.push({date:new Date(cur),day:info.cycleDay,cl:info.cycleLength,e:info.eDose,p:info.pDose,syms,note,bleed,fm:info.isFullMoon,phase:phase(info.cycleDay).name});
+    // Include day if it has cycle info OR has any logged data
+    const hasLog=syms||note||bleed>0;
+    if(info){
+      rows.push({date:new Date(cur),day:info.cycleDay,cl:info.cycleLength,e:info.eDose,p:info.pDose,syms,note,bleed,fm:info.isFullMoon,phase:phase(info.cycleDay).name});
+    } else if(hasLog){
+      rows.push({date:new Date(cur),day:'—',cl:'—',e:'—',p:'—',syms,note,bleed,fm:false,phase:'—'});
+    }
     cur.setDate(cur.getDate()+1);
   }
 
